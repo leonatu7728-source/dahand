@@ -1,5 +1,5 @@
 {
-  "v": 1,
+  "v": 2,
   "lang": "vi",
   "onboarded": true,
   "name": "Linh",
@@ -20,338 +20,339 @@
   "hideNumbers": false,
   "credits": 50,
   "lastBonus": "",
+  "currency": "USD",
   "events": [
     {
-      "id": "s1428h",
+      "id": "s153hk",
       "title": "Đưa con đi học",
       "date": "2026-09-30",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s26knq",
+      "id": "s2oabg",
       "title": "Họp video với nhóm kế toán",
       "date": "2026-09-30",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "s3cqq5",
+      "id": "s3maso",
       "title": "Đón con",
       "date": "2026-09-30",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "s4j02x",
+      "id": "s47gus",
       "title": "Đưa con đi học",
       "date": "2026-10-01",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s5cb8f",
+      "id": "s5t7ei",
       "title": "Học piano (Na)",
       "date": "2026-10-01",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "s63b9p",
+      "id": "s6w43b",
       "title": "Đưa con đi học",
       "date": "2026-10-02",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s7ck10",
+      "id": "s7zbpn",
       "title": "Gửi hóa đơn hằng tuần",
       "date": "2026-10-02",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "s801lt",
+      "id": "s8frrz",
       "title": "Đi chợ cuối tuần",
       "date": "2026-10-03",
       "time": "09:00",
       "mode": "home"
     },
     {
-      "id": "s9ufgf",
+      "id": "s9bqjk",
       "title": "Ăn trưa nhà bà",
       "date": "2026-10-04",
       "time": "11:00",
       "mode": "home"
     },
     {
-      "id": "sanrap",
+      "id": "saojf3",
       "title": "Đưa con đi học",
       "date": "2026-10-05",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sb5xbi",
+      "id": "sbd9xy",
       "title": "Đón con",
       "date": "2026-10-05",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "scp301",
+      "id": "sc9q40",
       "title": "Làm sổ sách – Bloom Café",
       "date": "2026-10-05",
       "time": "09:00",
       "mode": "office"
     },
     {
-      "id": "sdwxv0",
+      "id": "sdwfnd",
       "title": "Đưa con đi học",
       "date": "2026-10-06",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sexing",
+      "id": "se7cwa",
       "title": "Học bơi (Bin)",
       "date": "2026-10-06",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "sff48n",
+      "id": "sfipre",
       "title": "Đưa con đi học",
       "date": "2026-10-07",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sgpsdr",
+      "id": "sgr7rn",
       "title": "Họp video với nhóm kế toán",
       "date": "2026-10-07",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "sh171u",
+      "id": "sh0yly",
       "title": "Đón con",
       "date": "2026-10-07",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "sib8am",
+      "id": "sivhum",
       "title": "Đưa con đi học",
       "date": "2026-10-08",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sjl2cs",
+      "id": "sjxu5p",
       "title": "Học piano (Na)",
       "date": "2026-10-08",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "skkngs",
+      "id": "skvbvz",
       "title": "Đưa con đi học",
       "date": "2026-10-09",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sl5ra7",
+      "id": "slixaw",
       "title": "Gửi hóa đơn hằng tuần",
       "date": "2026-10-09",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "smegpv",
+      "id": "smnpgg",
       "title": "Đi chợ cuối tuần",
       "date": "2026-10-10",
       "time": "09:00",
       "mode": "home"
     },
     {
-      "id": "snij4q",
+      "id": "snkj57",
       "title": "Ăn trưa nhà bà",
       "date": "2026-10-11",
       "time": "11:00",
       "mode": "home"
     },
     {
-      "id": "soe3pl",
+      "id": "sovtg1",
       "title": "Đưa con đi học",
       "date": "2026-10-12",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sps56f",
+      "id": "spwv6r",
       "title": "Đón con",
       "date": "2026-10-12",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "sqxns5",
+      "id": "sq3b43",
       "title": "Làm sổ sách – Bloom Café",
       "date": "2026-10-12",
       "time": "09:00",
       "mode": "office"
     },
     {
-      "id": "srfhmb",
+      "id": "sr019x",
       "title": "Đưa con đi học",
       "date": "2026-10-13",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "ss3gxc",
+      "id": "ss9ggy",
       "title": "Học bơi (Bin)",
       "date": "2026-10-13",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "stqzu0",
+      "id": "stl295",
       "title": "Đưa con đi học",
       "date": "2026-10-14",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "su1ybc",
+      "id": "su1u7v",
       "title": "Họp video với nhóm kế toán",
       "date": "2026-10-14",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "svzcpe",
+      "id": "sv08mh",
       "title": "Đón con",
       "date": "2026-10-14",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "swmzbo",
+      "id": "swinal",
       "title": "Đưa con đi học",
       "date": "2026-10-15",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sxi8hn",
+      "id": "sxgrm7",
       "title": "Học piano (Na)",
       "date": "2026-10-15",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "syn4oa",
+      "id": "sycv2v",
       "title": "Đưa con đi học",
       "date": "2026-10-16",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "szakqt",
+      "id": "szenma",
       "title": "Gửi hóa đơn hằng tuần",
       "date": "2026-10-16",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "s108jtj",
+      "id": "s1030cq",
       "title": "Đi chợ cuối tuần",
       "date": "2026-10-17",
       "time": "09:00",
       "mode": "home"
     },
     {
-      "id": "s11t7j2",
+      "id": "s11un1o",
       "title": "Ăn trưa nhà bà",
       "date": "2026-10-18",
       "time": "11:00",
       "mode": "home"
     },
     {
-      "id": "s12zdzp",
+      "id": "s1279es",
       "title": "Đưa con đi học",
       "date": "2026-10-19",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s13phdv",
+      "id": "s13o28i",
       "title": "Đón con",
       "date": "2026-10-19",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "s14sqe5",
+      "id": "s14kgom",
       "title": "Làm sổ sách – Bloom Café",
       "date": "2026-10-19",
       "time": "09:00",
       "mode": "office"
     },
     {
-      "id": "s15br3n",
+      "id": "s15j2on",
       "title": "Đưa con đi học",
       "date": "2026-10-20",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s16wwl5",
+      "id": "s16pvfl",
       "title": "Học bơi (Bin)",
       "date": "2026-10-20",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "s17fm00",
+      "id": "s17cgio",
       "title": "Đưa con đi học",
       "date": "2026-10-21",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s18d4al",
+      "id": "s18j3v6",
       "title": "Họp video với nhóm kế toán",
       "date": "2026-10-21",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "s19qdl6",
+      "id": "s1912lo",
       "title": "Đón con",
       "date": "2026-10-21",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "s1atz2l",
+      "id": "s1ab71y",
       "title": "Họp phụ huynh",
       "date": "2026-10-08",
       "time": "08:30",
       "mode": "home"
     },
     {
-      "id": "s1bgchj",
+      "id": "s1bd07p",
       "title": "Tiêm phòng cho con",
       "date": "2026-10-11",
       "time": "14:00",
       "mode": "home"
     },
     {
-      "id": "s1c9bcl",
+      "id": "s1cn3f6",
       "title": "Hạn khai thuế cho khách",
       "date": "2026-10-15",
       "time": "10:00",
@@ -360,49 +361,49 @@
   ],
   "tasks": [
     {
-      "id": "s1d9ezg",
+      "id": "s1dj9bo",
       "title": "Đóng tiền điện, nước",
       "done": false,
       "mode": "home",
       "due": "2026-10-07"
     },
     {
-      "id": "s1e57he",
+      "id": "s1ezsul",
       "title": "Đối chiếu sao kê Bloom Café",
       "done": false,
       "mode": "office",
       "due": "2026-10-08"
     },
     {
-      "id": "s1ftwzq",
+      "id": "s1fqpfe",
       "title": "Mua giày đi học cho Na",
       "done": false,
       "mode": "home",
       "due": "2026-10-09"
     },
     {
-      "id": "s1gxynh",
+      "id": "s1gjqsv",
       "title": "Ký giấy đi dã ngoại cho con",
       "done": false,
       "mode": "home",
       "due": "2026-10-07"
     },
     {
-      "id": "s1hsv99",
+      "id": "s1hpu0n",
       "title": "Lên kế hoạch sinh nhật Bin",
       "done": false,
       "mode": "home",
       "due": "2026-10-17"
     },
     {
-      "id": "s1iln8r",
+      "id": "s1idwra",
       "title": "Đặt lịch bảo dưỡng xe",
       "done": false,
       "mode": "home",
       "due": ""
     },
     {
-      "id": "s1juvyw",
+      "id": "s1jstae",
       "title": "Gửi báo cáo tháng 9 cho khách",
       "done": true,
       "mode": "office",
@@ -411,352 +412,251 @@
   ],
   "sleep": {
     "2026-09-24": {
-      "bed": "23:07",
-      "wake": "05:49"
+      "bed": "23:05",
+      "wake": "05:50"
     },
     "2026-09-25": {
-      "bed": "22:31",
-      "wake": "05:44"
+      "bed": "22:55",
+      "wake": "06:05"
     },
     "2026-09-26": {
-      "bed": "23:57",
-      "wake": "07:07"
+      "bed": "23:20",
+      "wake": "07:00"
     },
     "2026-09-27": {
-      "bed": "23:38",
-      "wake": "06:47"
+      "bed": "23:55",
+      "wake": "07:05"
     },
     "2026-09-28": {
-      "bed": "22:38",
-      "wake": "05:53"
+      "bed": "22:30",
+      "wake": "05:40"
     },
     "2026-09-29": {
-      "bed": "22:32",
+      "bed": "23:20",
       "wake": "05:45"
     },
     "2026-09-30": {
-      "bed": "23:24",
-      "wake": "05:57"
+      "bed": "22:40",
+      "wake": "05:55"
     },
     "2026-10-01": {
-      "bed": "22:37",
-      "wake": "05:54"
+      "bed": "22:35",
+      "wake": "06:10"
     },
     "2026-10-02": {
-      "bed": "22:48",
-      "wake": "05:46"
+      "bed": "22:55",
+      "wake": "05:50"
     },
     "2026-10-03": {
-      "bed": "23:36",
-      "wake": "07:20"
+      "bed": "23:30",
+      "wake": "07:10"
     },
     "2026-10-04": {
-      "bed": "23:11",
-      "wake": "06:58"
+      "bed": "00:00",
+      "wake": "06:45"
     },
     "2026-10-05": {
-      "bed": "23:13",
-      "wake": "06:08"
+      "bed": "23:25",
+      "wake": "05:55"
     },
     "2026-10-06": {
-      "bed": "23:19",
-      "wake": "06:16"
+      "bed": "23:15",
+      "wake": "06:00"
     },
     "2026-10-07": {
-      "bed": "22:49",
-      "wake": "05:45"
+      "bed": "23:30",
+      "wake": "05:55"
     }
   },
   "energy": {
-    "2026-09-24": [
-      {
-        "t": "09:10",
-        "v": 4
-      },
-      {
-        "t": "14:44",
-        "v": 2
-      },
-      {
-        "t": "19:33",
-        "v": 3
-      }
-    ],
-    "2026-09-25": [
-      {
-        "t": "09:09",
-        "v": 4
-      },
-      {
-        "t": "14:07",
-        "v": 3
-      },
-      {
-        "t": "19:11",
-        "v": 3
-      }
-    ],
-    "2026-09-26": [
-      {
-        "t": "09:05",
-        "v": 5
-      },
-      {
-        "t": "14:21",
-        "v": 3
-      },
-      {
-        "t": "19:02",
-        "v": 2
-      }
-    ],
-    "2026-09-27": [
-      {
-        "t": "09:40",
-        "v": 4
-      },
-      {
-        "t": "14:14",
-        "v": 2
-      },
-      {
-        "t": "19:14",
-        "v": 2
-      }
-    ],
-    "2026-09-28": [
-      {
-        "t": "09:06",
-        "v": 4
-      },
-      {
-        "t": "14:21",
-        "v": 2
-      },
-      {
-        "t": "19:39",
-        "v": 2
-      }
-    ],
-    "2026-09-29": [
-      {
-        "t": "09:13",
-        "v": 4
-      },
-      {
-        "t": "14:09",
-        "v": 3
-      },
-      {
-        "t": "19:33",
-        "v": 3
-      }
-    ],
-    "2026-09-30": [
-      {
-        "t": "09:13",
-        "v": 4
-      },
-      {
-        "t": "14:36",
-        "v": 3
-      },
-      {
-        "t": "19:30",
-        "v": 3
-      }
-    ],
-    "2026-10-01": [
-      {
-        "t": "09:05",
-        "v": 5
-      },
-      {
-        "t": "14:17",
-        "v": 2
-      },
-      {
-        "t": "19:23",
-        "v": 3
-      }
-    ],
-    "2026-10-02": [
-      {
-        "t": "09:08",
-        "v": 5
-      },
-      {
-        "t": "14:07",
-        "v": 3
-      },
-      {
-        "t": "19:18",
-        "v": 3
-      }
-    ],
-    "2026-10-03": [
-      {
-        "t": "09:18",
-        "v": 4
-      },
-      {
-        "t": "14:04",
-        "v": 3
-      },
-      {
-        "t": "19:01",
-        "v": 3
-      }
-    ],
-    "2026-10-04": [
-      {
-        "t": "09:30",
-        "v": 4
-      },
-      {
-        "t": "14:44",
-        "v": 3
-      },
-      {
-        "t": "19:36",
-        "v": 3
-      }
-    ],
-    "2026-10-05": [
-      {
-        "t": "09:35",
-        "v": 5
-      },
-      {
-        "t": "14:24",
-        "v": 3
-      },
-      {
-        "t": "19:21",
-        "v": 2
-      }
-    ],
-    "2026-10-06": [
-      {
-        "t": "09:37",
-        "v": 4
-      },
-      {
-        "t": "14:31",
-        "v": 2
-      },
-      {
-        "t": "19:45",
-        "v": 2
-      }
-    ],
-    "2026-10-07": []
+    "2026-09-24": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-09-25": {
+      "m": 5,
+      "a": 2,
+      "e": 2
+    },
+    "2026-09-26": {
+      "m": 4,
+      "a": 3,
+      "e": 2
+    },
+    "2026-09-27": {
+      "m": 5,
+      "a": 2,
+      "e": 3
+    },
+    "2026-09-28": {
+      "m": 5,
+      "a": 3,
+      "e": 2
+    },
+    "2026-09-29": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-09-30": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-10-01": {
+      "m": 5,
+      "a": 2,
+      "e": 2
+    },
+    "2026-10-02": {
+      "m": 4,
+      "a": 3,
+      "e": 3
+    },
+    "2026-10-03": {
+      "m": 4,
+      "a": 3,
+      "e": 3
+    },
+    "2026-10-04": {
+      "m": 4,
+      "a": 2,
+      "e": 3
+    },
+    "2026-10-05": {
+      "m": 5,
+      "a": 3,
+      "e": 2
+    },
+    "2026-10-06": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-10-07": {
+      "m": 5,
+      "a": 2
+    }
   },
   "meals": {
     "2026-10-01": [
       {
-        "name": "Sữa chua Hy Lạp với quả mọng",
-        "kcal": 224
+        "name": "Trứng ốp rau củ với bánh mì nướng",
+        "kcal": 306
       },
       {
-        "name": "Salad gà nướng",
-        "kcal": 391
+        "name": "Súp đậu lăng rau củ",
+        "kcal": 312
       },
       {
-        "name": "Đậu phụ xào rau với cơm",
-        "kcal": 484
+        "name": "Súp đậu lăng rau củ",
+        "kcal": 340
       }
     ],
     "2026-10-02": [
       {
         "name": "Trứng ốp rau củ với bánh mì nướng",
-        "kcal": 344
-      },
-      {
-        "name": "Phở bò",
-        "kcal": 462
+        "kcal": 326
       },
       {
         "name": "Súp đậu lăng rau củ",
-        "kcal": 333
+        "kcal": 307
+      },
+      {
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 465
       }
     ],
     "2026-10-03": [
       {
-        "name": "Trứng ốp rau củ với bánh mì nướng",
-        "kcal": 305
+        "name": "Yến mạch chuối bơ đậu phộng",
+        "kcal": 321
       },
       {
-        "name": "Bánh mì gà",
-        "kcal": 504
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 454
       },
       {
-        "name": "Cà ri gà với cơm",
-        "kcal": 680
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 444
       }
     ],
     "2026-10-04": [
       {
         "name": "Trứng ốp rau củ với bánh mì nướng",
-        "kcal": 350
+        "kcal": 324
       },
       {
-        "name": "Bánh mì gà",
-        "kcal": 518
+        "name": "Súp đậu lăng rau củ",
+        "kcal": 319
       },
       {
-        "name": "Salad gà nướng",
-        "kcal": 410
-      }
-    ],
-    "2026-10-05": [
-      {
-        "name": "Trứng ốp rau củ với bánh mì nướng",
-        "kcal": 336
-      },
-      {
-        "name": "Cuốn gà tây sốt hummus",
-        "kcal": 440
-      },
-      {
-        "name": "Đậu phụ xào rau với cơm",
-        "kcal": 479
+        "name": "Mì Ý sốt bò bằm",
+        "kcal": 644
       },
       {
         "name": "Cà phê sữa",
         "kcal": 150
       }
     ],
-    "2026-10-06": [
+    "2026-10-05": [
       {
-        "name": "Yến mạch chuối bơ đậu phộng",
-        "kcal": 327
+        "name": "Trứng ốp rau củ với bánh mì nướng",
+        "kcal": 295
       },
       {
-        "name": "Súp đậu lăng rau củ",
-        "kcal": 320
+        "name": "Bánh mì gà",
+        "kcal": 472
       },
       {
-        "name": "Canh cá rau với cơm",
-        "kcal": 386
+        "name": "Đậu phụ xào rau với cơm",
+        "kcal": 465
       }
     ],
-    "2026-10-07": []
+    "2026-10-06": [
+      {
+        "name": "Trứng ốp rau củ với bánh mì nướng",
+        "kcal": 306
+      },
+      {
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 446
+      },
+      {
+        "name": "Khoai tây nướng với đậu và phô mai",
+        "kcal": 457
+      },
+      {
+        "name": "Cà phê sữa",
+        "kcal": 150
+      }
+    ],
+    "2026-10-07": [
+      {
+        "name": "Yến mạch chuối bơ đậu phộng",
+        "kcal": 350
+      },
+      {
+        "name": "Bánh mì gà",
+        "kcal": 513
+      }
+    ]
   },
   "water": {
-    "2026-09-24": 7,
-    "2026-09-25": 6,
-    "2026-09-26": 7,
-    "2026-09-27": 5,
-    "2026-09-28": 7,
-    "2026-09-29": 6,
-    "2026-09-30": 8,
-    "2026-10-01": 5,
-    "2026-10-02": 8,
-    "2026-10-03": 5,
-    "2026-10-04": 6,
-    "2026-10-05": 7,
-    "2026-10-06": 4,
+    "2026-09-24": 8,
+    "2026-09-25": 4,
+    "2026-09-26": 6,
+    "2026-09-27": 6,
+    "2026-09-28": 5,
+    "2026-09-29": 5,
+    "2026-09-30": 6,
+    "2026-10-01": 8,
+    "2026-10-02": 4,
+    "2026-10-03": 4,
+    "2026-10-04": 5,
+    "2026-10-05": 6,
+    "2026-10-06": 7,
     "2026-10-07": 3
   },
   "mealPlan": [

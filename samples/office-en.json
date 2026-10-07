@@ -1,5 +1,5 @@
 {
-  "v": 1,
+  "v": 2,
   "lang": "en",
   "onboarded": true,
   "name": "Emma",
@@ -19,247 +19,248 @@
   "hideNumbers": false,
   "credits": 50,
   "lastBonus": "",
+  "currency": "USD",
   "events": [
     {
-      "id": "s1eb9k",
+      "id": "s1fewx",
       "title": "Team stand-up",
       "date": "2026-09-30",
       "time": "09:30",
       "mode": "office"
     },
     {
-      "id": "s2pj76",
+      "id": "s2qzcb",
       "title": "Agency call",
       "date": "2026-09-30",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "s3v6w7",
+      "id": "s34620",
       "title": "Budget meeting",
       "date": "2026-10-01",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "s4ms56",
+      "id": "s44tw1",
       "title": "Gym",
       "date": "2026-10-01",
       "time": "18:30",
       "mode": "office"
     },
     {
-      "id": "s5w3fu",
+      "id": "s5o0qs",
       "title": "Weekly report due",
       "date": "2026-10-02",
       "time": "16:00",
       "mode": "office"
     },
     {
-      "id": "s6u4ro",
+      "id": "s6gjgk",
       "title": "Brunch with Chloe",
       "date": "2026-10-03",
       "time": "11:00",
       "mode": "office"
     },
     {
-      "id": "s7ql76",
+      "id": "s7cnb4",
       "title": "Team stand-up",
       "date": "2026-10-05",
       "time": "09:30",
       "mode": "office"
     },
     {
-      "id": "s8son0",
+      "id": "s86e2h",
       "title": "1:1 with Sarah",
       "date": "2026-10-05",
       "time": "14:00",
       "mode": "office"
     },
     {
-      "id": "s9r6ah",
+      "id": "s96e9f",
       "title": "Campaign review",
       "date": "2026-10-06",
       "time": "11:00",
       "mode": "office"
     },
     {
-      "id": "sacdbk",
+      "id": "sas4yv",
       "title": "Gym",
       "date": "2026-10-06",
       "time": "18:30",
       "mode": "office"
     },
     {
-      "id": "sbywmw",
+      "id": "sbqcxl",
       "title": "Team stand-up",
       "date": "2026-10-07",
       "time": "09:30",
       "mode": "office"
     },
     {
-      "id": "sc6l4x",
+      "id": "scvpu4",
       "title": "Agency call",
       "date": "2026-10-07",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "sd2930",
+      "id": "sdxn57",
       "title": "Budget meeting",
       "date": "2026-10-08",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "seue5r",
+      "id": "selj5n",
       "title": "Gym",
       "date": "2026-10-08",
       "time": "18:30",
       "mode": "office"
     },
     {
-      "id": "sftn4f",
+      "id": "sfiz9w",
       "title": "Weekly report due",
       "date": "2026-10-09",
       "time": "16:00",
       "mode": "office"
     },
     {
-      "id": "sgt7mi",
+      "id": "sg6ylx",
       "title": "Brunch with Chloe",
       "date": "2026-10-10",
       "time": "11:00",
       "mode": "office"
     },
     {
-      "id": "shcjne",
+      "id": "shak2f",
       "title": "Team stand-up",
       "date": "2026-10-12",
       "time": "09:30",
       "mode": "office"
     },
     {
-      "id": "sifraq",
+      "id": "sis0bl",
       "title": "1:1 with Sarah",
       "date": "2026-10-12",
       "time": "14:00",
       "mode": "office"
     },
     {
-      "id": "sj14ui",
+      "id": "sjw8xj",
       "title": "Campaign review",
       "date": "2026-10-13",
       "time": "11:00",
       "mode": "office"
     },
     {
-      "id": "skkc03",
+      "id": "skfpb4",
       "title": "Gym",
       "date": "2026-10-13",
       "time": "18:30",
       "mode": "office"
     },
     {
-      "id": "sllkza",
+      "id": "slxvkc",
       "title": "Team stand-up",
       "date": "2026-10-14",
       "time": "09:30",
       "mode": "office"
     },
     {
-      "id": "sml0ar",
+      "id": "smws65",
       "title": "Agency call",
       "date": "2026-10-14",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "sn9ldn",
+      "id": "snig74",
       "title": "Budget meeting",
       "date": "2026-10-15",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "soyedl",
+      "id": "soyn18",
       "title": "Gym",
       "date": "2026-10-15",
       "time": "18:30",
       "mode": "office"
     },
     {
-      "id": "spant1",
+      "id": "spo3wd",
       "title": "Weekly report due",
       "date": "2026-10-16",
       "time": "16:00",
       "mode": "office"
     },
     {
-      "id": "sqheu7",
+      "id": "sqfd7s",
       "title": "Brunch with Chloe",
       "date": "2026-10-17",
       "time": "11:00",
       "mode": "office"
     },
     {
-      "id": "sra2kd",
+      "id": "sruy1x",
       "title": "Team stand-up",
       "date": "2026-10-19",
       "time": "09:30",
       "mode": "office"
     },
     {
-      "id": "sszpkq",
+      "id": "ssietn",
       "title": "1:1 with Sarah",
       "date": "2026-10-19",
       "time": "14:00",
       "mode": "office"
     },
     {
-      "id": "sttsc8",
+      "id": "stdzno",
       "title": "Campaign review",
       "date": "2026-10-20",
       "time": "11:00",
       "mode": "office"
     },
     {
-      "id": "su0xsd",
+      "id": "su5v7a",
       "title": "Gym",
       "date": "2026-10-20",
       "time": "18:30",
       "mode": "office"
     },
     {
-      "id": "svok1p",
+      "id": "svjt4z",
       "title": "Team stand-up",
       "date": "2026-10-21",
       "time": "09:30",
       "mode": "office"
     },
     {
-      "id": "swhrsd",
+      "id": "swvz03",
       "title": "Agency call",
       "date": "2026-10-21",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "sx8o84",
+      "id": "sxb71i",
       "title": "Dentist",
       "date": "2026-10-09",
       "time": "13:00",
       "mode": "office"
     },
     {
-      "id": "syu8xb",
+      "id": "sy3cdx",
       "title": "Q4 planning workshop",
       "date": "2026-10-13",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "szi8y3",
+      "id": "sz5s6q",
       "title": "Mum's birthday dinner",
       "date": "2026-10-16",
       "time": "19:00",
@@ -268,56 +269,56 @@
   ],
   "tasks": [
     {
-      "id": "s10txsv",
+      "id": "s10emvl",
       "title": "Send Q3 campaign results to Sarah",
       "done": false,
       "mode": "office",
       "due": "2026-10-07"
     },
     {
-      "id": "s11kqga",
+      "id": "s113ok6",
       "title": "Approve new landing page copy",
       "done": false,
       "mode": "office",
       "due": "2026-10-07"
     },
     {
-      "id": "s120czc",
+      "id": "s12jcgl",
       "title": "Book flights for the Berlin trip",
       "done": false,
       "mode": "office",
       "due": "2026-10-10"
     },
     {
-      "id": "s13dy2g",
+      "id": "s13x774",
       "title": "Renew gym membership",
       "done": false,
       "mode": "office",
       "due": "2026-10-12"
     },
     {
-      "id": "s14tp53",
+      "id": "s14esc6",
       "title": "Prepare slides for budget meeting",
       "done": false,
       "mode": "office",
       "due": "2026-10-08"
     },
     {
-      "id": "s15g9bf",
+      "id": "s1532jr",
       "title": "Reply to recruiter email",
       "done": false,
       "mode": "office",
       "due": ""
     },
     {
-      "id": "s16jdkn",
+      "id": "s16u6zq",
       "title": "Expense report for September",
       "done": true,
       "mode": "office",
       "due": "2026-10-05"
     },
     {
-      "id": "s17o3ih",
+      "id": "s1775hf",
       "title": "Update team OKRs",
       "done": true,
       "mode": "office",
@@ -326,360 +327,255 @@
   ],
   "sleep": {
     "2026-09-24": {
-      "bed": "23:31",
-      "wake": "06:46"
+      "bed": "23:30",
+      "wake": "06:45"
     },
     "2026-09-25": {
-      "bed": "23:27",
-      "wake": "06:44"
+      "bed": "23:05",
+      "wake": "06:45"
     },
     "2026-09-26": {
-      "bed": "00:04",
-      "wake": "07:40"
+      "bed": "00:05",
+      "wake": "07:50"
     },
     "2026-09-27": {
-      "bed": "00:26",
-      "wake": "07:38"
+      "bed": "00:05",
+      "wake": "07:40"
     },
     "2026-09-28": {
-      "bed": "23:45",
-      "wake": "06:39"
+      "bed": "23:25",
+      "wake": "07:00"
     },
     "2026-09-29": {
-      "bed": "23:02",
-      "wake": "06:28"
+      "bed": "23:15",
+      "wake": "06:25"
     },
     "2026-09-30": {
-      "bed": "23:39",
-      "wake": "06:27"
-    },
-    "2026-10-01": {
-      "bed": "23:44",
-      "wake": "06:42"
-    },
-    "2026-10-02": {
-      "bed": "23:38",
-      "wake": "06:41"
-    },
-    "2026-10-03": {
-      "bed": "23:46",
-      "wake": "07:47"
-    },
-    "2026-10-04": {
-      "bed": "00:19",
-      "wake": "08:04"
-    },
-    "2026-10-05": {
-      "bed": "23:33",
+      "bed": "23:45",
       "wake": "06:40"
     },
+    "2026-10-01": {
+      "bed": "23:50",
+      "wake": "07:00"
+    },
+    "2026-10-02": {
+      "bed": "23:05",
+      "wake": "06:45"
+    },
+    "2026-10-03": {
+      "bed": "00:00",
+      "wake": "08:00"
+    },
+    "2026-10-04": {
+      "bed": "00:35",
+      "wake": "07:50"
+    },
+    "2026-10-05": {
+      "bed": "23:30",
+      "wake": "06:30"
+    },
     "2026-10-06": {
-      "bed": "23:48",
-      "wake": "06:28"
+      "bed": "00:00",
+      "wake": "06:55"
     },
     "2026-10-07": {
-      "bed": "23:04",
-      "wake": "06:44"
+      "bed": "23:40",
+      "wake": "06:45"
     }
   },
   "energy": {
-    "2026-09-24": [
-      {
-        "t": "09:29",
-        "v": 5
-      },
-      {
-        "t": "14:26",
-        "v": 3
-      },
-      {
-        "t": "19:26",
-        "v": 2
-      }
-    ],
-    "2026-09-25": [
-      {
-        "t": "09:20",
-        "v": 5
-      },
-      {
-        "t": "14:34",
-        "v": 3
-      },
-      {
-        "t": "19:08",
-        "v": 2
-      }
-    ],
-    "2026-09-26": [
-      {
-        "t": "09:06",
-        "v": 5
-      },
-      {
-        "t": "14:28",
-        "v": 3
-      },
-      {
-        "t": "19:42",
-        "v": 3
-      }
-    ],
-    "2026-09-27": [
-      {
-        "t": "09:12",
-        "v": 5
-      },
-      {
-        "t": "14:37",
-        "v": 2
-      },
-      {
-        "t": "19:14",
-        "v": 3
-      }
-    ],
-    "2026-09-28": [
-      {
-        "t": "09:28",
-        "v": 4
-      },
-      {
-        "t": "14:07",
-        "v": 3
-      },
-      {
-        "t": "19:41",
-        "v": 3
-      }
-    ],
-    "2026-09-29": [
-      {
-        "t": "09:24",
-        "v": 5
-      },
-      {
-        "t": "14:13",
-        "v": 3
-      },
-      {
-        "t": "19:36",
-        "v": 3
-      }
-    ],
-    "2026-09-30": [
-      {
-        "t": "09:31",
-        "v": 4
-      },
-      {
-        "t": "14:21",
-        "v": 3
-      },
-      {
-        "t": "19:17",
-        "v": 3
-      }
-    ],
-    "2026-10-01": [
-      {
-        "t": "09:15",
-        "v": 5
-      },
-      {
-        "t": "14:17",
-        "v": 3
-      },
-      {
-        "t": "19:08",
-        "v": 3
-      }
-    ],
-    "2026-10-02": [
-      {
-        "t": "09:29",
-        "v": 5
-      },
-      {
-        "t": "14:15",
-        "v": 3
-      },
-      {
-        "t": "19:00",
-        "v": 3
-      }
-    ],
-    "2026-10-03": [
-      {
-        "t": "09:44",
-        "v": 5
-      },
-      {
-        "t": "14:29",
-        "v": 3
-      },
-      {
-        "t": "19:28",
-        "v": 3
-      }
-    ],
-    "2026-10-04": [
-      {
-        "t": "09:46",
-        "v": 4
-      },
-      {
-        "t": "14:38",
-        "v": 3
-      },
-      {
-        "t": "19:03",
-        "v": 3
-      }
-    ],
-    "2026-10-05": [
-      {
-        "t": "09:40",
-        "v": 4
-      },
-      {
-        "t": "14:37",
-        "v": 3
-      },
-      {
-        "t": "19:21",
-        "v": 2
-      }
-    ],
-    "2026-10-06": [
-      {
-        "t": "09:49",
-        "v": 4
-      },
-      {
-        "t": "14:35",
-        "v": 3
-      },
-      {
-        "t": "19:45",
-        "v": 3
-      }
-    ],
-    "2026-10-07": []
+    "2026-09-24": {
+      "m": 5,
+      "a": 3,
+      "e": 3
+    },
+    "2026-09-25": {
+      "m": 5,
+      "a": 3,
+      "e": 3
+    },
+    "2026-09-26": {
+      "m": 5,
+      "a": 2,
+      "e": 2
+    },
+    "2026-09-27": {
+      "m": 5,
+      "a": 2,
+      "e": 3
+    },
+    "2026-09-28": {
+      "m": 5,
+      "a": 3,
+      "e": 2
+    },
+    "2026-09-29": {
+      "m": 5,
+      "a": 3,
+      "e": 2
+    },
+    "2026-09-30": {
+      "m": 4,
+      "a": 3,
+      "e": 3
+    },
+    "2026-10-01": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-10-02": {
+      "m": 5,
+      "a": 3,
+      "e": 3
+    },
+    "2026-10-03": {
+      "m": 4,
+      "a": 2,
+      "e": 3
+    },
+    "2026-10-04": {
+      "m": 4,
+      "a": 2,
+      "e": 3
+    },
+    "2026-10-05": {
+      "m": 4,
+      "a": 3,
+      "e": 3
+    },
+    "2026-10-06": {
+      "m": 4,
+      "a": 2,
+      "e": 3
+    },
+    "2026-10-07": {
+      "m": 5,
+      "a": 2
+    }
   },
   "meals": {
     "2026-10-01": [
       {
+        "name": "Greek yogurt with berries",
+        "kcal": 230
+      },
+      {
+        "name": "Chicken banh mi",
+        "kcal": 486
+      },
+      {
+        "name": "Salmon, rice and greens",
+        "kcal": 614
+      }
+    ],
+    "2026-10-02": [
+      {
+        "name": "Veggie omelette with toast",
+        "kcal": 311
+      },
+      {
+        "name": "Grilled chicken salad",
+        "kcal": 434
+      },
+      {
+        "name": "Lentil and vegetable soup",
+        "kcal": 346
+      }
+    ],
+    "2026-10-03": [
+      {
+        "name": "Veggie omelette with toast",
+        "kcal": 298
+      },
+      {
+        "name": "Beef pho",
+        "kcal": 443
+      },
+      {
+        "name": "Fish and vegetable soup with rice",
+        "kcal": 401
+      },
+      {
+        "name": "Latte",
+        "kcal": 150
+      }
+    ],
+    "2026-10-04": [
+      {
         "name": "Oatmeal with banana and peanut butter",
-        "kcal": 358
+        "kcal": 373
+      },
+      {
+        "name": "Beef pho",
+        "kcal": 444
+      },
+      {
+        "name": "Beef pho",
+        "kcal": 425
+      },
+      {
+        "name": "Latte",
+        "kcal": 150
+      }
+    ],
+    "2026-10-05": [
+      {
+        "name": "Greek yogurt with berries",
+        "kcal": 236
       },
       {
         "name": "Turkey and hummus wrap",
-        "kcal": 428
+        "kcal": 454
+      },
+      {
+        "name": "Salmon, rice and greens",
+        "kcal": 576
+      },
+      {
+        "name": "Latte",
+        "kcal": 150
+      }
+    ],
+    "2026-10-06": [
+      {
+        "name": "Greek yogurt with berries",
+        "kcal": 221
       },
       {
         "name": "Lentil and vegetable soup",
         "kcal": 323
       },
       {
-        "name": "Latte",
-        "kcal": 150
+        "name": "Chicken curry with rice",
+        "kcal": 689
       }
     ],
-    "2026-10-02": [
+    "2026-10-07": [
       {
         "name": "Greek yogurt with berries",
-        "kcal": 218
-      },
-      {
-        "name": "Chicken banh mi",
-        "kcal": 477
+        "kcal": 219
       },
       {
         "name": "Grilled chicken salad",
-        "kcal": 435
-      },
-      {
-        "name": "Latte",
-        "kcal": 150
+        "kcal": 423
       }
-    ],
-    "2026-10-03": [
-      {
-        "name": "Veggie omelette with toast",
-        "kcal": 296
-      },
-      {
-        "name": "Turkey and hummus wrap",
-        "kcal": 459
-      },
-      {
-        "name": "Fish and vegetable soup with rice",
-        "kcal": 393
-      }
-    ],
-    "2026-10-04": [
-      {
-        "name": "Oatmeal with banana and peanut butter",
-        "kcal": 360
-      },
-      {
-        "name": "Chicken banh mi",
-        "kcal": 508
-      },
-      {
-        "name": "Chicken banh mi",
-        "kcal": 513
-      }
-    ],
-    "2026-10-05": [
-      {
-        "name": "Greek yogurt with berries",
-        "kcal": 234
-      },
-      {
-        "name": "Turkey and hummus wrap",
-        "kcal": 458
-      },
-      {
-        "name": "Grilled chicken salad",
-        "kcal": 420
-      }
-    ],
-    "2026-10-06": [
-      {
-        "name": "Greek yogurt with berries",
-        "kcal": 203
-      },
-      {
-        "name": "Grilled chicken salad",
-        "kcal": 426
-      },
-      {
-        "name": "Lentil and vegetable soup",
-        "kcal": 325
-      },
-      {
-        "name": "Latte",
-        "kcal": 150
-      }
-    ],
-    "2026-10-07": []
+    ]
   },
   "water": {
-    "2026-09-24": 7,
-    "2026-09-25": 5,
-    "2026-09-26": 8,
-    "2026-09-27": 4,
-    "2026-09-28": 5,
+    "2026-09-24": 6,
+    "2026-09-25": 8,
+    "2026-09-26": 5,
+    "2026-09-27": 6,
+    "2026-09-28": 7,
     "2026-09-29": 4,
     "2026-09-30": 4,
-    "2026-10-01": 8,
+    "2026-10-01": 7,
     "2026-10-02": 6,
-    "2026-10-03": 4,
-    "2026-10-04": 4,
-    "2026-10-05": 4,
-    "2026-10-06": 4,
+    "2026-10-03": 6,
+    "2026-10-04": 6,
+    "2026-10-05": 7,
+    "2026-10-06": 5,
     "2026-10-07": 3
   },
   "mealPlan": [],

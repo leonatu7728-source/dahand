@@ -9,7 +9,7 @@
   function add(s, n) { var d = parse(s); d.setDate(d.getDate() + n); return iso(d); }
   function dow(s) { return parse(s).getDay(); } // 0 = Sunday
   function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-  function hm(mins) { mins = ((mins % 1440) + 1440) % 1440; return pad(Math.floor(mins / 60)) + ":" + pad(mins % 60); }
+  function hm(mins) { mins = Math.round(mins / 5) * 5; mins = ((mins % 1440) + 1440) % 1440; return pad(Math.floor(mins / 60)) + ":" + pad(mins % 60); }
   function L(pair, lang) { return lang === "vi" ? pair[1] : pair[0]; }
 
   var id = 0;
@@ -37,14 +37,12 @@
       var bed = p.bed + Math.round((r() - 0.5) * 60) + (weekend ? 40 : 0);
       var wake = p.wake + Math.round((r() - 0.5) * 40) + (weekend ? 60 : 0);
       sleep[d] = { bed: hm(bed), wake: hm(wake) };
-      var nowH = new Date().getHours(), list = [];
-      for (var c = 0; c < 3; c++) {
-        var hour = [9, 14, 19][c];
-        if (o === 0 && hour >= nowH) continue;
-        var v = Math.max(1, Math.min(5, Math.round(3 + (Math.abs(hour - p.peak) < 3 ? 1.4 : -0.3) + (r() - 0.5) * 1.6)));
-        list.push({ t: pad(hour) + ":" + pad(Math.floor(r() * 50)), v: v });
-      }
-      energy[d] = list;
+      var nowH = new Date().getHours(), slots = {};
+      [["m", 9], ["a", 14], ["e", 19]].forEach(function (x) {
+        if (o === 0 && x[1] >= nowH) return;
+        slots[x[0]] = Math.max(1, Math.min(5, Math.round(3 + (Math.abs(x[1] - p.peak) < 3 ? 1.4 : -0.3) + (r() - 0.5) * 1.6)));
+      });
+      energy[d] = slots;
       if (o >= -6) {
         var picks = o < 0 ? ["breakfast", "lunch", "dinner"] : (nowH >= 13 ? ["breakfast", "lunch"] : nowH >= 9 ? ["breakfast"] : []);
         meals[d] = picks.map(function (type) {
@@ -171,9 +169,9 @@
     p.lang = lang;
     var health = buildHealth(p, today, r);
     return {
-      v: 1, lang: lang, onboarded: true, name: p.name.split(" ")[0], modes: p.modes.slice(), active: p.modes[p.modes.length > 1 ? 1 : 0],
+      v: 2, lang: lang, onboarded: true, name: p.name.split(" ")[0], modes: p.modes.slice(), active: p.modes[p.modes.length > 1 ? 1 : 0],
       profile: Object.assign({}, p.profile), track: true, hideNumbers: false,
-      credits: 50, lastBonus: "",
+      credits: 50, lastBonus: "", currency: "USD",
       events: buildEvents(p, today, lang), tasks: buildTasks(p, today, lang),
       sleep: health.sleep, energy: health.energy, meals: health.meals, water: health.water,
       mealPlan: p.mealPlan ? p.mealPlan.slice() : [], grocery: {},

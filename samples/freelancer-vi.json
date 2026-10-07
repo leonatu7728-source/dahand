@@ -1,5 +1,5 @@
 {
-  "v": 1,
+  "v": 2,
   "lang": "vi",
   "onboarded": true,
   "name": "Marco",
@@ -20,198 +20,199 @@
   "hideNumbers": false,
   "credits": 50,
   "lastBonus": "",
+  "currency": "USD",
   "events": [
     {
-      "id": "s1lja2",
+      "id": "s1kusb",
       "title": "Gọi khách hàng",
       "date": "2026-09-30",
       "time": "14:00",
       "mode": "freelancer"
     },
     {
-      "id": "s20xis",
+      "id": "s2v7w4",
       "title": "Khối giờ chỉnh ảnh",
       "date": "2026-10-01",
       "time": "10:00",
       "mode": "freelancer"
     },
     {
-      "id": "s3xd7u",
+      "id": "s3l6u4",
       "title": "Leo núi trong nhà",
       "date": "2026-10-01",
       "time": "19:00",
       "mode": "office"
     },
     {
-      "id": "s4om28",
+      "id": "s426re",
       "title": "Gửi album và hóa đơn",
       "date": "2026-10-02",
       "time": "17:00",
       "mode": "freelancer"
     },
     {
-      "id": "s5zjg0",
+      "id": "s5ly9i",
       "title": "Chụp đám cưới",
       "date": "2026-10-03",
       "time": "13:00",
       "mode": "freelancer"
     },
     {
-      "id": "s668vr",
+      "id": "s6es3w",
       "title": "Khối giờ chỉnh ảnh",
       "date": "2026-10-05",
       "time": "10:00",
       "mode": "freelancer"
     },
     {
-      "id": "s71b2m",
+      "id": "s7lohw",
       "title": "Leo núi trong nhà",
       "date": "2026-10-05",
       "time": "19:00",
       "mode": "office"
     },
     {
-      "id": "s81zx0",
+      "id": "s890ww",
       "title": "Chụp sản phẩm – Lumi Lamps",
       "date": "2026-10-06",
       "time": "09:00",
       "mode": "freelancer"
     },
     {
-      "id": "s9hmod",
+      "id": "s9tzzb",
       "title": "Gọi khách hàng",
       "date": "2026-10-07",
       "time": "14:00",
       "mode": "freelancer"
     },
     {
-      "id": "sar2km",
+      "id": "sa7cl2",
       "title": "Khối giờ chỉnh ảnh",
       "date": "2026-10-08",
       "time": "10:00",
       "mode": "freelancer"
     },
     {
-      "id": "sbh8jy",
+      "id": "sbh42u",
       "title": "Leo núi trong nhà",
       "date": "2026-10-08",
       "time": "19:00",
       "mode": "office"
     },
     {
-      "id": "scbsqg",
+      "id": "scyi52",
       "title": "Gửi album và hóa đơn",
       "date": "2026-10-09",
       "time": "17:00",
       "mode": "freelancer"
     },
     {
-      "id": "sd7eb6",
+      "id": "sd6orm",
       "title": "Chụp đám cưới",
       "date": "2026-10-10",
       "time": "13:00",
       "mode": "freelancer"
     },
     {
-      "id": "seacmo",
+      "id": "sexq3a",
       "title": "Khối giờ chỉnh ảnh",
       "date": "2026-10-12",
       "time": "10:00",
       "mode": "freelancer"
     },
     {
-      "id": "sf7iqp",
+      "id": "sfkmbu",
       "title": "Leo núi trong nhà",
       "date": "2026-10-12",
       "time": "19:00",
       "mode": "office"
     },
     {
-      "id": "sgk6ju",
+      "id": "sg0x0m",
       "title": "Chụp sản phẩm – Lumi Lamps",
       "date": "2026-10-13",
       "time": "09:00",
       "mode": "freelancer"
     },
     {
-      "id": "shum8o",
+      "id": "shsrx0",
       "title": "Gọi khách hàng",
       "date": "2026-10-14",
       "time": "14:00",
       "mode": "freelancer"
     },
     {
-      "id": "silmft",
+      "id": "si4z9b",
       "title": "Khối giờ chỉnh ảnh",
       "date": "2026-10-15",
       "time": "10:00",
       "mode": "freelancer"
     },
     {
-      "id": "sj0h6l",
+      "id": "sj40cb",
       "title": "Leo núi trong nhà",
       "date": "2026-10-15",
       "time": "19:00",
       "mode": "office"
     },
     {
-      "id": "sknvmo",
+      "id": "skroca",
       "title": "Gửi album và hóa đơn",
       "date": "2026-10-16",
       "time": "17:00",
       "mode": "freelancer"
     },
     {
-      "id": "sl0n74",
+      "id": "slsmev",
       "title": "Chụp đám cưới",
       "date": "2026-10-17",
       "time": "13:00",
       "mode": "freelancer"
     },
     {
-      "id": "smyplf",
+      "id": "smnzay",
       "title": "Khối giờ chỉnh ảnh",
       "date": "2026-10-19",
       "time": "10:00",
       "mode": "freelancer"
     },
     {
-      "id": "snn9cg",
+      "id": "sn6q3m",
       "title": "Leo núi trong nhà",
       "date": "2026-10-19",
       "time": "19:00",
       "mode": "office"
     },
     {
-      "id": "soab66",
+      "id": "sombqf",
       "title": "Chụp sản phẩm – Lumi Lamps",
       "date": "2026-10-20",
       "time": "09:00",
       "mode": "freelancer"
     },
     {
-      "id": "spe1zi",
+      "id": "spe9z9",
       "title": "Gọi khách hàng",
       "date": "2026-10-21",
       "time": "14:00",
       "mode": "freelancer"
     },
     {
-      "id": "sqwwim",
+      "id": "sqkf6l",
       "title": "Khảo sát địa điểm – cưới nhà Park",
       "date": "2026-10-08",
       "time": "11:00",
       "mode": "freelancer"
     },
     {
-      "id": "srhbq8",
+      "id": "srj37f",
       "title": "Chụp chân dung – Studio Kite",
       "date": "2026-10-10",
       "time": "16:00",
       "mode": "freelancer"
     },
     {
-      "id": "ssbw5x",
+      "id": "sscmng",
       "title": "Cưới nhà Park",
       "date": "2026-10-19",
       "time": "12:00",
@@ -220,49 +221,49 @@
   ],
   "tasks": [
     {
-      "id": "stj7jo",
+      "id": "styd4p",
       "title": "Giao album sinh nhật nhà Lee",
       "done": false,
       "mode": "freelancer",
       "due": "2026-10-07"
     },
     {
-      "id": "suaqt5",
+      "id": "sutlvf",
       "title": "Nhắc lại báo giá cho Gomez",
       "done": false,
       "mode": "freelancer",
       "due": "2026-10-07"
     },
     {
-      "id": "svkvzp",
+      "id": "svkuye",
       "title": "Sao lưu thẻ nhớ",
       "done": false,
       "mode": "freelancer",
       "due": "2026-10-08"
     },
     {
-      "id": "swin1x",
+      "id": "sw43xr",
       "title": "Cập nhật website portfolio",
       "done": false,
       "mode": "freelancer",
       "due": "2026-10-13"
     },
     {
-      "id": "sxyihf",
+      "id": "sxu5y6",
       "title": "Nộp thuế quý",
       "done": false,
       "mode": "office",
       "due": "2026-10-16"
     },
     {
-      "id": "syu19s",
+      "id": "sy2f30",
       "title": "Vệ sinh cảm biến máy ảnh",
       "done": false,
       "mode": "freelancer",
       "due": ""
     },
     {
-      "id": "sz48ti",
+      "id": "szqns5",
       "title": "Gửi hóa đơn Bloom Café",
       "done": true,
       "mode": "freelancer",
@@ -271,342 +272,160 @@
   ],
   "sleep": {
     "2026-09-24": {
-      "bed": "00:43",
+      "bed": "00:45",
       "wake": "08:10"
     },
     "2026-09-25": {
-      "bed": "01:08",
-      "wake": "07:53"
+      "bed": "00:25",
+      "wake": "08:05"
     },
     "2026-09-26": {
-      "bed": "00:55",
-      "wake": "08:51"
+      "bed": "01:05",
+      "wake": "09:15"
     },
     "2026-09-27": {
-      "bed": "01:30",
-      "wake": "08:57"
+      "bed": "00:55",
+      "wake": "08:50"
     },
     "2026-09-28": {
-      "bed": "00:44",
-      "wake": "07:45"
+      "bed": "00:45",
+      "wake": "08:05"
     },
     "2026-09-29": {
       "bed": "01:05",
-      "wake": "08:04"
+      "wake": "08:10"
     },
     "2026-09-30": {
-      "bed": "00:40",
-      "wake": "07:51"
+      "bed": "00:45",
+      "wake": "07:45"
     },
     "2026-10-01": {
-      "bed": "01:10",
-      "wake": "07:42"
+      "bed": "00:20",
+      "wake": "08:15"
     },
     "2026-10-02": {
-      "bed": "01:09",
-      "wake": "07:48"
+      "bed": "00:25",
+      "wake": "07:55"
     },
     "2026-10-03": {
-      "bed": "01:47",
-      "wake": "09:18"
+      "bed": "01:45",
+      "wake": "08:45"
     },
     "2026-10-04": {
-      "bed": "01:47",
-      "wake": "09:20"
+      "bed": "01:20",
+      "wake": "08:40"
     },
     "2026-10-05": {
-      "bed": "00:33",
-      "wake": "07:58"
+      "bed": "00:55",
+      "wake": "08:20"
     },
     "2026-10-06": {
-      "bed": "00:46",
-      "wake": "08:14"
+      "bed": "00:20",
+      "wake": "08:05"
     },
     "2026-10-07": {
-      "bed": "00:34",
-      "wake": "08:03"
+      "bed": "00:55",
+      "wake": "08:15"
     }
   },
   "energy": {
-    "2026-09-24": [
-      {
-        "t": "09:00",
-        "v": 3
-      },
-      {
-        "t": "14:40",
-        "v": 4
-      },
-      {
-        "t": "19:29",
-        "v": 2
-      }
-    ],
-    "2026-09-25": [
-      {
-        "t": "09:11",
-        "v": 3
-      },
-      {
-        "t": "14:42",
-        "v": 5
-      },
-      {
-        "t": "19:28",
-        "v": 3
-      }
-    ],
-    "2026-09-26": [
-      {
-        "t": "09:11",
-        "v": 3
-      },
-      {
-        "t": "14:28",
-        "v": 5
-      },
-      {
-        "t": "19:31",
-        "v": 3
-      }
-    ],
-    "2026-09-27": [
-      {
-        "t": "09:43",
-        "v": 3
-      },
-      {
-        "t": "14:17",
-        "v": 5
-      },
-      {
-        "t": "19:42",
-        "v": 3
-      }
-    ],
-    "2026-09-28": [
-      {
-        "t": "09:11",
-        "v": 3
-      },
-      {
-        "t": "14:41",
-        "v": 4
-      },
-      {
-        "t": "19:45",
-        "v": 2
-      }
-    ],
-    "2026-09-29": [
-      {
-        "t": "09:19",
-        "v": 3
-      },
-      {
-        "t": "14:04",
-        "v": 4
-      },
-      {
-        "t": "19:03",
-        "v": 2
-      }
-    ],
-    "2026-09-30": [
-      {
-        "t": "09:39",
-        "v": 3
-      },
-      {
-        "t": "14:43",
-        "v": 5
-      },
-      {
-        "t": "19:38",
-        "v": 3
-      }
-    ],
-    "2026-10-01": [
-      {
-        "t": "09:36",
-        "v": 3
-      },
-      {
-        "t": "14:43",
-        "v": 5
-      },
-      {
-        "t": "19:02",
-        "v": 2
-      }
-    ],
-    "2026-10-02": [
-      {
-        "t": "09:03",
-        "v": 3
-      },
-      {
-        "t": "14:23",
-        "v": 4
-      },
-      {
-        "t": "19:19",
-        "v": 3
-      }
-    ],
-    "2026-10-03": [
-      {
-        "t": "09:12",
-        "v": 2
-      },
-      {
-        "t": "14:41",
-        "v": 5
-      },
-      {
-        "t": "19:47",
-        "v": 2
-      }
-    ],
-    "2026-10-04": [
-      {
-        "t": "09:07",
-        "v": 2
-      },
-      {
-        "t": "14:40",
-        "v": 4
-      },
-      {
-        "t": "19:07",
-        "v": 2
-      }
-    ],
-    "2026-10-05": [
-      {
-        "t": "09:12",
-        "v": 3
-      },
-      {
-        "t": "14:47",
-        "v": 4
-      },
-      {
-        "t": "19:12",
-        "v": 3
-      }
-    ],
-    "2026-10-06": [
-      {
-        "t": "09:01",
-        "v": 3
-      },
-      {
-        "t": "14:25",
-        "v": 5
-      },
-      {
-        "t": "19:09",
-        "v": 3
-      }
-    ],
-    "2026-10-07": []
+    "2026-09-24": {
+      "m": 3,
+      "a": 4,
+      "e": 3
+    },
+    "2026-09-25": {
+      "m": 3,
+      "a": 5,
+      "e": 2
+    },
+    "2026-09-26": {
+      "m": 3,
+      "a": 5,
+      "e": 3
+    },
+    "2026-09-27": {
+      "m": 3,
+      "a": 4,
+      "e": 3
+    },
+    "2026-09-28": {
+      "m": 3,
+      "a": 5,
+      "e": 3
+    },
+    "2026-09-29": {
+      "m": 2,
+      "a": 5,
+      "e": 3
+    },
+    "2026-09-30": {
+      "m": 3,
+      "a": 4,
+      "e": 3
+    },
+    "2026-10-01": {
+      "m": 3,
+      "a": 5,
+      "e": 3
+    },
+    "2026-10-02": {
+      "m": 3,
+      "a": 5,
+      "e": 3
+    },
+    "2026-10-03": {
+      "m": 2,
+      "a": 4,
+      "e": 3
+    },
+    "2026-10-04": {
+      "m": 3,
+      "a": 4,
+      "e": 3
+    },
+    "2026-10-05": {
+      "m": 3,
+      "a": 4,
+      "e": 2
+    },
+    "2026-10-06": {
+      "m": 2,
+      "a": 4,
+      "e": 3
+    },
+    "2026-10-07": {
+      "m": 2,
+      "a": 5
+    }
   },
   "meals": {
     "2026-10-01": [
       {
-        "name": "Yến mạch chuối bơ đậu phộng",
-        "kcal": 367
-      },
-      {
-        "name": "Súp đậu lăng rau củ",
-        "kcal": 342
-      },
-      {
-        "name": "Cà ri gà với cơm",
-        "kcal": 672
-      },
-      {
-        "name": "Cà phê sữa",
-        "kcal": 150
-      }
-    ],
-    "2026-10-02": [
-      {
-        "name": "Trứng ốp rau củ với bánh mì nướng",
-        "kcal": 342
-      },
-      {
-        "name": "Salad gà nướng",
-        "kcal": 415
-      },
-      {
-        "name": "Cá hồi, cơm và rau xanh",
-        "kcal": 573
-      },
-      {
-        "name": "Cà phê sữa",
-        "kcal": 150
-      }
-    ],
-    "2026-10-03": [
-      {
         "name": "Sữa chua Hy Lạp với quả mọng",
-        "kcal": 238
+        "kcal": 223
+      },
+      {
+        "name": "Phở bò",
+        "kcal": 425
       },
       {
         "name": "Súp đậu lăng rau củ",
         "kcal": 304
       },
       {
-        "name": "Phở bò",
-        "kcal": 456
+        "name": "Cà phê sữa",
+        "kcal": 150
       }
     ],
-    "2026-10-04": [
+    "2026-10-02": [
       {
-        "name": "Trứng ốp rau củ với bánh mì nướng",
-        "kcal": 334
+        "name": "Sữa chua Hy Lạp với quả mọng",
+        "kcal": 247
       },
       {
         "name": "Súp đậu lăng rau củ",
-        "kcal": 322
-      },
-      {
-        "name": "Canh cá rau với cơm",
-        "kcal": 369
-      },
-      {
-        "name": "Cà phê sữa",
-        "kcal": 150
-      }
-    ],
-    "2026-10-05": [
-      {
-        "name": "Yến mạch chuối bơ đậu phộng",
-        "kcal": 345
-      },
-      {
-        "name": "Bánh mì gà",
-        "kcal": 525
-      },
-      {
-        "name": "Cuốn gà tây sốt hummus",
-        "kcal": 425
-      },
-      {
-        "name": "Cà phê sữa",
-        "kcal": 150
-      }
-    ],
-    "2026-10-06": [
-      {
-        "name": "Yến mạch chuối bơ đậu phộng",
-        "kcal": 372
-      },
-      {
-        "name": "Salad gà nướng",
-        "kcal": 449
+        "kcal": 360
       },
       {
         "name": "Salad gà nướng",
@@ -617,78 +436,151 @@
         "kcal": 150
       }
     ],
-    "2026-10-07": []
+    "2026-10-03": [
+      {
+        "name": "Sữa chua Hy Lạp với quả mọng",
+        "kcal": 242
+      },
+      {
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 442
+      },
+      {
+        "name": "Canh cá rau với cơm",
+        "kcal": 400
+      },
+      {
+        "name": "Cà phê sữa",
+        "kcal": 150
+      }
+    ],
+    "2026-10-04": [
+      {
+        "name": "Trứng ốp rau củ với bánh mì nướng",
+        "kcal": 321
+      },
+      {
+        "name": "Súp đậu lăng rau củ",
+        "kcal": 301
+      },
+      {
+        "name": "Súp đậu lăng rau củ",
+        "kcal": 329
+      }
+    ],
+    "2026-10-05": [
+      {
+        "name": "Sữa chua Hy Lạp với quả mọng",
+        "kcal": 250
+      },
+      {
+        "name": "Phở bò",
+        "kcal": 477
+      },
+      {
+        "name": "Mì Ý sốt bò bằm",
+        "kcal": 658
+      },
+      {
+        "name": "Cà phê sữa",
+        "kcal": 150
+      }
+    ],
+    "2026-10-06": [
+      {
+        "name": "Sữa chua Hy Lạp với quả mọng",
+        "kcal": 209
+      },
+      {
+        "name": "Salad gà nướng",
+        "kcal": 410
+      },
+      {
+        "name": "Cà ri gà với cơm",
+        "kcal": 672
+      }
+    ],
+    "2026-10-07": [
+      {
+        "name": "Yến mạch chuối bơ đậu phộng",
+        "kcal": 361
+      },
+      {
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 443
+      }
+    ]
   },
   "water": {
-    "2026-09-24": 7,
-    "2026-09-25": 4,
-    "2026-09-26": 8,
+    "2026-09-24": 8,
+    "2026-09-25": 8,
+    "2026-09-26": 4,
     "2026-09-27": 6,
-    "2026-09-28": 8,
-    "2026-09-29": 7,
+    "2026-09-28": 7,
+    "2026-09-29": 6,
     "2026-09-30": 8,
-    "2026-10-01": 8,
-    "2026-10-02": 7,
-    "2026-10-03": 4,
-    "2026-10-04": 7,
-    "2026-10-05": 5,
-    "2026-10-06": 4,
+    "2026-10-01": 6,
+    "2026-10-02": 8,
+    "2026-10-03": 5,
+    "2026-10-04": 6,
+    "2026-10-05": 4,
+    "2026-10-06": 6,
     "2026-10-07": 3
   },
   "mealPlan": [],
   "grocery": {},
   "quotes": [
     {
-      "id": "s109aaz",
+      "id": "s10d266",
       "client": "Grace Park",
       "service": "Chụp ảnh cưới",
       "amount": 2400,
       "stage": 1
     },
     {
-      "id": "s11zazw",
+      "id": "s11vc5c",
       "client": "Carlos Gomez",
       "service": "Chụp kỷ niệm + MC",
       "amount": 1100,
       "stage": 0
     },
     {
-      "id": "s12i8xt",
+      "id": "s12vuy3",
       "client": "Startup Hub",
       "service": "Sự kiện ra mắt",
       "amount": 1600,
       "stage": 0
     },
     {
-      "id": "s13c0se",
+      "id": "s13ivhg",
       "client": "Studio Kite",
       "service": "Chân dung nhân viên",
       "amount": 650,
       "stage": 2
     },
     {
-      "id": "s14z6ua",
+      "id": "s14k4co",
       "client": "Lee family",
       "service": "Tiệc sinh nhật",
       "amount": 1200,
       "stage": 2
     },
     {
-      "id": "s15pz9z",
+      "id": "s15h289",
       "client": "Lumi Lamps",
       "service": "Ảnh sản phẩm",
       "amount": 900,
       "stage": 1
     },
     {
-      "id": "s16ussf",
+      "id": "s16hfl5",
       "client": "Bloom Café",
       "service": "Ảnh thực đơn",
       "amount": 480,
       "stage": 3
     },
     {
-      "id": "s17rbvy",
+      "id": "s17k5un",
       "client": "Northwind",
       "service": "Chân dung doanh nghiệp",
       "amount": 1350,

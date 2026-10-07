@@ -5,6 +5,7 @@ DaHand là trợ lý cá nhân cho công việc và cuộc sống. Đây là b�
 - **Có gì:** Hôm nay (tóm tắt, check-in năng lượng, lịch, việc, hỏi trợ lý), Kế hoạch (lịch 7 ngày + danh sách việc), Routine (giấc ngủ, năng lượng, nước, calo), 4 Mode (Văn phòng, Nội trợ & WFH, Freelancer, Nghệ sĩ), credit, khảo sát + đăng ký chờ, Anh/Việt.
 - **Dữ liệu:** lưu trong trình duyệt của từng người (localStorage), không có máy chủ, không tốn tiền.
 - **Trợ lý AI:** đang là bản giả lập chạy trên máy, trả lời từ chính dữ liệu của người dùng. Có sẵn chỗ để gắn AI thật sau (xem cuối file).
+- **Bản v2 (sau audit):** màn hình chào còn 2 bước, app bắt đầu trống kèm danh sách "Bắt đầu", thẻ Năng lượng mới (Sáng/Chiều/Tối, bảng 7 ngày, nhận xét giờ tỉnh táo nhất), sửa mọi mục + hoàn tác khi xóa, chọn món có sẵn khi ghi bữa ăn, lịch sử giấc ngủ 7 đêm, Hôm nay thay đổi theo Mode, tách việc từ tin nhắn chính xác hơn, tiền tệ USD/GBP/EUR/VND, đo hành vi ẩn danh (tùy chọn).
 - **Cài lên điện thoại:** là PWA – mở link bằng điện thoại → menu trình duyệt → "Thêm vào màn hình chính".
 
 ---
@@ -77,10 +78,21 @@ Gửi link này cho người thử là xong.
 
 Câu 5 là thước đo quan trọng: nếu khoảng 40% trở lên trả lời "Rất thất vọng", sản phẩm đang đi đúng hướng.
 
+## 3b. Đo hành vi người thử (tùy chọn, miễn phí)
+
+App tự ghi các sự kiện ẩn danh (không có tên, email hay nội dung): `onboarding_start`, `onboarding_done`, `sample_<tên>`, `tab_<tên tab>`, `mode_<mode>`, `task_add`, `event_add`, `energy_set`, `sleep_log`, `meal_add`, `profile_set`, `ai_<loại>`, `inbox_scan`, `inbox_add`, `daily_bonus`, `first_open`, `return_visit`.
+
+Chọn một trong hai:
+
+- **GoatCounter:** đăng ký tại https://www.goatcounter.com (miễn phí cho dự án phi thương mại), đặt mã trang, ví dụ `dahand` → điền `GOATCOUNTER_CODE: "dahand"` trong `js/config.js`.
+- **Umami Cloud:** đăng ký tại https://umami.is, thêm website, copy **Website ID** → điền `UMAMI_WEBSITE_ID`.
+
+Chỉ số nên xem: tỉ lệ `onboarding_done / onboarding_start`, số người `return_visit` (quay lại ngày hôm sau), tab nào được mở nhiều nhất, và bao nhiêu người dùng trợ lý (`ai_*`).
+
 ## 4. Sửa và cập nhật
 
 - Sửa file trực tiếp trên GitHub (bút chì → Commit). Trang tự cập nhật sau 1–2 phút.
-- Sau mỗi lần sửa, mở `sw.js`, đổi `dahand-v1` thành `dahand-v2` (v3, v4…) để điện thoại đã cài app nhận bản mới.
+- Sau mỗi lần sửa, mở `sw.js`, tăng số phiên bản, ví dụ `dahand-v3` thành `dahand-v4` để điện thoại đã cài app nhận bản mới.
 - Đổi số credit tặng ban đầu / điểm danh: `js/config.js`.
 - Đổi chữ trên giao diện: `js/i18n.js` (phần `en` và `vi`).
 - Đổi món ăn, Mode, giá credit: `js/data.js`. Calo món ăn là số ước tính.

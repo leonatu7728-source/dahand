@@ -1,5 +1,5 @@
 {
-  "v": 1,
+  "v": 2,
   "lang": "en",
   "onboarded": true,
   "name": "Linh",
@@ -20,338 +20,339 @@
   "hideNumbers": false,
   "credits": 50,
   "lastBonus": "",
+  "currency": "USD",
   "events": [
     {
-      "id": "s1g760",
+      "id": "s1fcb0",
       "title": "School drop-off",
       "date": "2026-09-30",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s2faph",
+      "id": "s24g9w",
       "title": "Video call with accountant team",
       "date": "2026-09-30",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "s3l24a",
+      "id": "s300vo",
       "title": "School pickup",
       "date": "2026-09-30",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "s452it",
+      "id": "s47ydp",
       "title": "School drop-off",
       "date": "2026-10-01",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s57atp",
+      "id": "s5caw5",
       "title": "Piano lesson (Na)",
       "date": "2026-10-01",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "s684ks",
+      "id": "s6lyji",
       "title": "School drop-off",
       "date": "2026-10-02",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s72vtt",
+      "id": "s7tqmt",
       "title": "Send weekly invoices",
       "date": "2026-10-02",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "s8syrp",
+      "id": "s83m4c",
       "title": "Grocery run",
       "date": "2026-10-03",
       "time": "09:00",
       "mode": "home"
     },
     {
-      "id": "s990qr",
+      "id": "s9bqpv",
       "title": "Lunch at grandma's",
       "date": "2026-10-04",
       "time": "11:00",
       "mode": "home"
     },
     {
-      "id": "sal2op",
+      "id": "sa3a1s",
       "title": "School drop-off",
       "date": "2026-10-05",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sbkgrc",
+      "id": "sbq8dt",
       "title": "School pickup",
       "date": "2026-10-05",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "sc0lr5",
+      "id": "sc3fqs",
       "title": "Client books – Bloom Café",
       "date": "2026-10-05",
       "time": "09:00",
       "mode": "office"
     },
     {
-      "id": "sds9io",
+      "id": "sdrj6c",
       "title": "School drop-off",
       "date": "2026-10-06",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "se1b5e",
+      "id": "ses000",
       "title": "Swimming class (Bin)",
       "date": "2026-10-06",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "sffaka",
+      "id": "sfhx1f",
       "title": "School drop-off",
       "date": "2026-10-07",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sgo6si",
+      "id": "sgodfu",
       "title": "Video call with accountant team",
       "date": "2026-10-07",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "shcmti",
+      "id": "shw8mo",
       "title": "School pickup",
       "date": "2026-10-07",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "siwcit",
+      "id": "siehnv",
       "title": "School drop-off",
       "date": "2026-10-08",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sjv5if",
+      "id": "sjohbx",
       "title": "Piano lesson (Na)",
       "date": "2026-10-08",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "skp8o2",
+      "id": "sk9aab",
       "title": "School drop-off",
       "date": "2026-10-09",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "slto0b",
+      "id": "slp9q5",
       "title": "Send weekly invoices",
       "date": "2026-10-09",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "smpqb2",
+      "id": "sm9axs",
       "title": "Grocery run",
       "date": "2026-10-10",
       "time": "09:00",
       "mode": "home"
     },
     {
-      "id": "sn7qzx",
+      "id": "snevoa",
       "title": "Lunch at grandma's",
       "date": "2026-10-11",
       "time": "11:00",
       "mode": "home"
     },
     {
-      "id": "sofw8k",
+      "id": "so6w2g",
       "title": "School drop-off",
       "date": "2026-10-12",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "spenf9",
+      "id": "spb0c1",
       "title": "School pickup",
       "date": "2026-10-12",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "sqq9cu",
+      "id": "sq8qnf",
       "title": "Client books – Bloom Café",
       "date": "2026-10-12",
       "time": "09:00",
       "mode": "office"
     },
     {
-      "id": "srv298",
+      "id": "srdup8",
       "title": "School drop-off",
       "date": "2026-10-13",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "ss55et",
+      "id": "ssryoz",
       "title": "Swimming class (Bin)",
       "date": "2026-10-13",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "st3twa",
+      "id": "stkhyw",
       "title": "School drop-off",
       "date": "2026-10-14",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sujh54",
+      "id": "suvdpp",
       "title": "Video call with accountant team",
       "date": "2026-10-14",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "svocai",
+      "id": "sv8wwu",
       "title": "School pickup",
       "date": "2026-10-14",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "swwryo",
+      "id": "swe5zy",
       "title": "School drop-off",
       "date": "2026-10-15",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "sxfzv2",
+      "id": "sxqy71",
       "title": "Piano lesson (Na)",
       "date": "2026-10-15",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "syt4wc",
+      "id": "sydbcv",
       "title": "School drop-off",
       "date": "2026-10-16",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "szi3fa",
+      "id": "szt6xy",
       "title": "Send weekly invoices",
       "date": "2026-10-16",
       "time": "15:00",
       "mode": "office"
     },
     {
-      "id": "s10shng",
+      "id": "s10gjkt",
       "title": "Grocery run",
       "date": "2026-10-17",
       "time": "09:00",
       "mode": "home"
     },
     {
-      "id": "s11kyyu",
+      "id": "s11yknz",
       "title": "Lunch at grandma's",
       "date": "2026-10-18",
       "time": "11:00",
       "mode": "home"
     },
     {
-      "id": "s1256ym",
+      "id": "s12lxkf",
       "title": "School drop-off",
       "date": "2026-10-19",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s13n6jz",
+      "id": "s138nfz",
       "title": "School pickup",
       "date": "2026-10-19",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "s149k21",
+      "id": "s14fb0z",
       "title": "Client books – Bloom Café",
       "date": "2026-10-19",
       "time": "09:00",
       "mode": "office"
     },
     {
-      "id": "s15jwf0",
+      "id": "s15hlom",
       "title": "School drop-off",
       "date": "2026-10-20",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s16rlkc",
+      "id": "s16jv3h",
       "title": "Swimming class (Bin)",
       "date": "2026-10-20",
       "time": "17:00",
       "mode": "home"
     },
     {
-      "id": "s175gx8",
+      "id": "s17uydb",
       "title": "School drop-off",
       "date": "2026-10-21",
       "time": "07:30",
       "mode": "home"
     },
     {
-      "id": "s18ux9x",
+      "id": "s18xcrn",
       "title": "Video call with accountant team",
       "date": "2026-10-21",
       "time": "10:00",
       "mode": "office"
     },
     {
-      "id": "s193lzx",
+      "id": "s19rkmm",
       "title": "School pickup",
       "date": "2026-10-21",
       "time": "16:30",
       "mode": "home"
     },
     {
-      "id": "s1apghs",
+      "id": "s1alsmf",
       "title": "Parent–teacher meeting",
       "date": "2026-10-08",
       "time": "08:30",
       "mode": "home"
     },
     {
-      "id": "s1bv4j0",
+      "id": "s1b6xv0",
       "title": "Kids' vaccination",
       "date": "2026-10-11",
       "time": "14:00",
       "mode": "home"
     },
     {
-      "id": "s1csidc",
+      "id": "s1csz8b",
       "title": "Tax filing deadline – client",
       "date": "2026-10-15",
       "time": "10:00",
@@ -360,49 +361,49 @@
   ],
   "tasks": [
     {
-      "id": "s1d1gyr",
+      "id": "s1dqmim",
       "title": "Pay electricity and water bills",
       "done": false,
       "mode": "home",
       "due": "2026-10-07"
     },
     {
-      "id": "s1eg7ew",
+      "id": "s1ek7cg",
       "title": "Reconcile Bloom Café bank statement",
       "done": false,
       "mode": "office",
       "due": "2026-10-08"
     },
     {
-      "id": "s1faik0",
+      "id": "s1f0u75",
       "title": "Buy Na's school shoes",
       "done": false,
       "mode": "home",
       "due": "2026-10-09"
     },
     {
-      "id": "s1gg9zz",
+      "id": "s1g1s0s",
       "title": "Sign field-trip form",
       "done": false,
       "mode": "home",
       "due": "2026-10-07"
     },
     {
-      "id": "s1hwo51",
+      "id": "s1hdh79",
       "title": "Plan Bin's birthday party",
       "done": false,
       "mode": "home",
       "due": "2026-10-17"
     },
     {
-      "id": "s1iwh9m",
+      "id": "s1ipxs7",
       "title": "Book car service",
       "done": false,
       "mode": "home",
       "due": ""
     },
     {
-      "id": "s1jrfb2",
+      "id": "s1jb6j4",
       "title": "Send September report to client",
       "done": true,
       "mode": "office",
@@ -411,352 +412,251 @@
   ],
   "sleep": {
     "2026-09-24": {
-      "bed": "23:07",
-      "wake": "05:49"
+      "bed": "23:05",
+      "wake": "05:50"
     },
     "2026-09-25": {
-      "bed": "22:31",
-      "wake": "05:44"
+      "bed": "22:55",
+      "wake": "06:05"
     },
     "2026-09-26": {
-      "bed": "23:57",
-      "wake": "07:07"
+      "bed": "23:20",
+      "wake": "07:00"
     },
     "2026-09-27": {
-      "bed": "23:38",
-      "wake": "06:47"
+      "bed": "23:55",
+      "wake": "07:05"
     },
     "2026-09-28": {
-      "bed": "22:38",
-      "wake": "05:53"
+      "bed": "22:30",
+      "wake": "05:40"
     },
     "2026-09-29": {
-      "bed": "22:32",
+      "bed": "23:20",
       "wake": "05:45"
     },
     "2026-09-30": {
-      "bed": "23:24",
-      "wake": "05:57"
+      "bed": "22:40",
+      "wake": "05:55"
     },
     "2026-10-01": {
-      "bed": "22:37",
-      "wake": "05:54"
+      "bed": "22:35",
+      "wake": "06:10"
     },
     "2026-10-02": {
-      "bed": "22:48",
-      "wake": "05:46"
+      "bed": "22:55",
+      "wake": "05:50"
     },
     "2026-10-03": {
-      "bed": "23:36",
-      "wake": "07:20"
+      "bed": "23:30",
+      "wake": "07:10"
     },
     "2026-10-04": {
-      "bed": "23:11",
-      "wake": "06:58"
+      "bed": "00:00",
+      "wake": "06:45"
     },
     "2026-10-05": {
-      "bed": "23:13",
-      "wake": "06:08"
+      "bed": "23:25",
+      "wake": "05:55"
     },
     "2026-10-06": {
-      "bed": "23:19",
-      "wake": "06:16"
+      "bed": "23:15",
+      "wake": "06:00"
     },
     "2026-10-07": {
-      "bed": "22:49",
-      "wake": "05:45"
+      "bed": "23:30",
+      "wake": "05:55"
     }
   },
   "energy": {
-    "2026-09-24": [
-      {
-        "t": "09:10",
-        "v": 4
-      },
-      {
-        "t": "14:44",
-        "v": 2
-      },
-      {
-        "t": "19:33",
-        "v": 3
-      }
-    ],
-    "2026-09-25": [
-      {
-        "t": "09:09",
-        "v": 4
-      },
-      {
-        "t": "14:07",
-        "v": 3
-      },
-      {
-        "t": "19:11",
-        "v": 3
-      }
-    ],
-    "2026-09-26": [
-      {
-        "t": "09:05",
-        "v": 5
-      },
-      {
-        "t": "14:21",
-        "v": 3
-      },
-      {
-        "t": "19:02",
-        "v": 2
-      }
-    ],
-    "2026-09-27": [
-      {
-        "t": "09:40",
-        "v": 4
-      },
-      {
-        "t": "14:14",
-        "v": 2
-      },
-      {
-        "t": "19:14",
-        "v": 2
-      }
-    ],
-    "2026-09-28": [
-      {
-        "t": "09:06",
-        "v": 4
-      },
-      {
-        "t": "14:21",
-        "v": 2
-      },
-      {
-        "t": "19:39",
-        "v": 2
-      }
-    ],
-    "2026-09-29": [
-      {
-        "t": "09:13",
-        "v": 4
-      },
-      {
-        "t": "14:09",
-        "v": 3
-      },
-      {
-        "t": "19:33",
-        "v": 3
-      }
-    ],
-    "2026-09-30": [
-      {
-        "t": "09:13",
-        "v": 4
-      },
-      {
-        "t": "14:36",
-        "v": 3
-      },
-      {
-        "t": "19:30",
-        "v": 3
-      }
-    ],
-    "2026-10-01": [
-      {
-        "t": "09:05",
-        "v": 5
-      },
-      {
-        "t": "14:17",
-        "v": 2
-      },
-      {
-        "t": "19:23",
-        "v": 3
-      }
-    ],
-    "2026-10-02": [
-      {
-        "t": "09:08",
-        "v": 5
-      },
-      {
-        "t": "14:07",
-        "v": 3
-      },
-      {
-        "t": "19:18",
-        "v": 3
-      }
-    ],
-    "2026-10-03": [
-      {
-        "t": "09:18",
-        "v": 4
-      },
-      {
-        "t": "14:04",
-        "v": 3
-      },
-      {
-        "t": "19:01",
-        "v": 3
-      }
-    ],
-    "2026-10-04": [
-      {
-        "t": "09:30",
-        "v": 4
-      },
-      {
-        "t": "14:44",
-        "v": 3
-      },
-      {
-        "t": "19:36",
-        "v": 3
-      }
-    ],
-    "2026-10-05": [
-      {
-        "t": "09:35",
-        "v": 5
-      },
-      {
-        "t": "14:24",
-        "v": 3
-      },
-      {
-        "t": "19:21",
-        "v": 2
-      }
-    ],
-    "2026-10-06": [
-      {
-        "t": "09:37",
-        "v": 4
-      },
-      {
-        "t": "14:31",
-        "v": 2
-      },
-      {
-        "t": "19:45",
-        "v": 2
-      }
-    ],
-    "2026-10-07": []
+    "2026-09-24": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-09-25": {
+      "m": 5,
+      "a": 2,
+      "e": 2
+    },
+    "2026-09-26": {
+      "m": 4,
+      "a": 3,
+      "e": 2
+    },
+    "2026-09-27": {
+      "m": 5,
+      "a": 2,
+      "e": 3
+    },
+    "2026-09-28": {
+      "m": 5,
+      "a": 3,
+      "e": 2
+    },
+    "2026-09-29": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-09-30": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-10-01": {
+      "m": 5,
+      "a": 2,
+      "e": 2
+    },
+    "2026-10-02": {
+      "m": 4,
+      "a": 3,
+      "e": 3
+    },
+    "2026-10-03": {
+      "m": 4,
+      "a": 3,
+      "e": 3
+    },
+    "2026-10-04": {
+      "m": 4,
+      "a": 2,
+      "e": 3
+    },
+    "2026-10-05": {
+      "m": 5,
+      "a": 3,
+      "e": 2
+    },
+    "2026-10-06": {
+      "m": 4,
+      "a": 2,
+      "e": 2
+    },
+    "2026-10-07": {
+      "m": 5,
+      "a": 2
+    }
   },
   "meals": {
     "2026-10-01": [
       {
-        "name": "Greek yogurt with berries",
-        "kcal": 224
+        "name": "Veggie omelette with toast",
+        "kcal": 306
       },
       {
-        "name": "Grilled chicken salad",
-        "kcal": 391
+        "name": "Lentil and vegetable soup",
+        "kcal": 312
       },
       {
-        "name": "Tofu vegetable stir-fry with rice",
-        "kcal": 484
+        "name": "Lentil and vegetable soup",
+        "kcal": 340
       }
     ],
     "2026-10-02": [
       {
         "name": "Veggie omelette with toast",
-        "kcal": 344
-      },
-      {
-        "name": "Beef pho",
-        "kcal": 462
+        "kcal": 326
       },
       {
         "name": "Lentil and vegetable soup",
-        "kcal": 333
+        "kcal": 307
+      },
+      {
+        "name": "Turkey and hummus wrap",
+        "kcal": 465
       }
     ],
     "2026-10-03": [
       {
-        "name": "Veggie omelette with toast",
-        "kcal": 305
+        "name": "Oatmeal with banana and peanut butter",
+        "kcal": 321
       },
       {
-        "name": "Chicken banh mi",
-        "kcal": 504
+        "name": "Turkey and hummus wrap",
+        "kcal": 454
       },
       {
-        "name": "Chicken curry with rice",
-        "kcal": 680
+        "name": "Turkey and hummus wrap",
+        "kcal": 444
       }
     ],
     "2026-10-04": [
       {
         "name": "Veggie omelette with toast",
-        "kcal": 350
+        "kcal": 324
       },
       {
-        "name": "Chicken banh mi",
-        "kcal": 518
+        "name": "Lentil and vegetable soup",
+        "kcal": 319
       },
       {
-        "name": "Grilled chicken salad",
-        "kcal": 410
-      }
-    ],
-    "2026-10-05": [
-      {
-        "name": "Veggie omelette with toast",
-        "kcal": 336
-      },
-      {
-        "name": "Turkey and hummus wrap",
-        "kcal": 440
-      },
-      {
-        "name": "Tofu vegetable stir-fry with rice",
-        "kcal": 479
+        "name": "Spaghetti bolognese",
+        "kcal": 644
       },
       {
         "name": "Latte",
         "kcal": 150
       }
     ],
-    "2026-10-06": [
+    "2026-10-05": [
       {
-        "name": "Oatmeal with banana and peanut butter",
-        "kcal": 327
+        "name": "Veggie omelette with toast",
+        "kcal": 295
       },
       {
-        "name": "Lentil and vegetable soup",
-        "kcal": 320
+        "name": "Chicken banh mi",
+        "kcal": 472
       },
       {
-        "name": "Fish and vegetable soup with rice",
-        "kcal": 386
+        "name": "Tofu vegetable stir-fry with rice",
+        "kcal": 465
       }
     ],
-    "2026-10-07": []
+    "2026-10-06": [
+      {
+        "name": "Veggie omelette with toast",
+        "kcal": 306
+      },
+      {
+        "name": "Turkey and hummus wrap",
+        "kcal": 446
+      },
+      {
+        "name": "Baked potato with beans and cheese",
+        "kcal": 457
+      },
+      {
+        "name": "Latte",
+        "kcal": 150
+      }
+    ],
+    "2026-10-07": [
+      {
+        "name": "Oatmeal with banana and peanut butter",
+        "kcal": 350
+      },
+      {
+        "name": "Chicken banh mi",
+        "kcal": 513
+      }
+    ]
   },
   "water": {
-    "2026-09-24": 7,
-    "2026-09-25": 6,
-    "2026-09-26": 7,
-    "2026-09-27": 5,
-    "2026-09-28": 7,
-    "2026-09-29": 6,
-    "2026-09-30": 8,
-    "2026-10-01": 5,
-    "2026-10-02": 8,
-    "2026-10-03": 5,
-    "2026-10-04": 6,
-    "2026-10-05": 7,
-    "2026-10-06": 4,
+    "2026-09-24": 8,
+    "2026-09-25": 4,
+    "2026-09-26": 6,
+    "2026-09-27": 6,
+    "2026-09-28": 5,
+    "2026-09-29": 5,
+    "2026-09-30": 6,
+    "2026-10-01": 8,
+    "2026-10-02": 4,
+    "2026-10-03": 4,
+    "2026-10-04": 5,
+    "2026-10-05": 6,
+    "2026-10-06": 7,
     "2026-10-07": 3
   },
   "mealPlan": [
