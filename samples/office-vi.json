@@ -1,0 +1,690 @@
+{
+  "v": 1,
+  "lang": "vi",
+  "onboarded": true,
+  "name": "Emma",
+  "modes": [
+    "office"
+  ],
+  "active": "office",
+  "profile": {
+    "sex": "female",
+    "age": 32,
+    "height": 165,
+    "weight": 62,
+    "activity": 2,
+    "pregnant": false
+  },
+  "track": true,
+  "hideNumbers": false,
+  "credits": 50,
+  "lastBonus": "",
+  "events": [
+    {
+      "id": "s11gjq",
+      "title": "Họp nhanh",
+      "date": "2026-09-30",
+      "time": "09:30",
+      "mode": "office"
+    },
+    {
+      "id": "s2bs81",
+      "title": "Gọi agency",
+      "date": "2026-09-30",
+      "time": "15:00",
+      "mode": "office"
+    },
+    {
+      "id": "s37mox",
+      "title": "Họp ngân sách",
+      "date": "2026-10-01",
+      "time": "10:00",
+      "mode": "office"
+    },
+    {
+      "id": "s48z24",
+      "title": "Tập gym",
+      "date": "2026-10-01",
+      "time": "18:30",
+      "mode": "office"
+    },
+    {
+      "id": "s58w8z",
+      "title": "Hạn nộp báo cáo tuần",
+      "date": "2026-10-02",
+      "time": "16:00",
+      "mode": "office"
+    },
+    {
+      "id": "s6xw75",
+      "title": "Ăn brunch với Chloe",
+      "date": "2026-10-03",
+      "time": "11:00",
+      "mode": "office"
+    },
+    {
+      "id": "s7g47m",
+      "title": "Họp nhanh đầu tuần",
+      "date": "2026-10-05",
+      "time": "09:30",
+      "mode": "office"
+    },
+    {
+      "id": "s8l8ui",
+      "title": "Họp 1:1 với Sarah",
+      "date": "2026-10-05",
+      "time": "14:00",
+      "mode": "office"
+    },
+    {
+      "id": "s9q7kx",
+      "title": "Duyệt chiến dịch",
+      "date": "2026-10-06",
+      "time": "11:00",
+      "mode": "office"
+    },
+    {
+      "id": "samdje",
+      "title": "Tập gym",
+      "date": "2026-10-06",
+      "time": "18:30",
+      "mode": "office"
+    },
+    {
+      "id": "sbprce",
+      "title": "Họp nhanh",
+      "date": "2026-10-07",
+      "time": "09:30",
+      "mode": "office"
+    },
+    {
+      "id": "scsw7i",
+      "title": "Gọi agency",
+      "date": "2026-10-07",
+      "time": "15:00",
+      "mode": "office"
+    },
+    {
+      "id": "sdbdvp",
+      "title": "Họp ngân sách",
+      "date": "2026-10-08",
+      "time": "10:00",
+      "mode": "office"
+    },
+    {
+      "id": "sepmku",
+      "title": "Tập gym",
+      "date": "2026-10-08",
+      "time": "18:30",
+      "mode": "office"
+    },
+    {
+      "id": "sf64nq",
+      "title": "Hạn nộp báo cáo tuần",
+      "date": "2026-10-09",
+      "time": "16:00",
+      "mode": "office"
+    },
+    {
+      "id": "sgi6eg",
+      "title": "Ăn brunch với Chloe",
+      "date": "2026-10-10",
+      "time": "11:00",
+      "mode": "office"
+    },
+    {
+      "id": "shd336",
+      "title": "Họp nhanh đầu tuần",
+      "date": "2026-10-12",
+      "time": "09:30",
+      "mode": "office"
+    },
+    {
+      "id": "sii8ts",
+      "title": "Họp 1:1 với Sarah",
+      "date": "2026-10-12",
+      "time": "14:00",
+      "mode": "office"
+    },
+    {
+      "id": "sjtusg",
+      "title": "Duyệt chiến dịch",
+      "date": "2026-10-13",
+      "time": "11:00",
+      "mode": "office"
+    },
+    {
+      "id": "skx878",
+      "title": "Tập gym",
+      "date": "2026-10-13",
+      "time": "18:30",
+      "mode": "office"
+    },
+    {
+      "id": "slb6d3",
+      "title": "Họp nhanh",
+      "date": "2026-10-14",
+      "time": "09:30",
+      "mode": "office"
+    },
+    {
+      "id": "sm1t3h",
+      "title": "Gọi agency",
+      "date": "2026-10-14",
+      "time": "15:00",
+      "mode": "office"
+    },
+    {
+      "id": "sn6xb5",
+      "title": "Họp ngân sách",
+      "date": "2026-10-15",
+      "time": "10:00",
+      "mode": "office"
+    },
+    {
+      "id": "sovlnn",
+      "title": "Tập gym",
+      "date": "2026-10-15",
+      "time": "18:30",
+      "mode": "office"
+    },
+    {
+      "id": "sp3805",
+      "title": "Hạn nộp báo cáo tuần",
+      "date": "2026-10-16",
+      "time": "16:00",
+      "mode": "office"
+    },
+    {
+      "id": "sqetg7",
+      "title": "Ăn brunch với Chloe",
+      "date": "2026-10-17",
+      "time": "11:00",
+      "mode": "office"
+    },
+    {
+      "id": "sr23ce",
+      "title": "Họp nhanh đầu tuần",
+      "date": "2026-10-19",
+      "time": "09:30",
+      "mode": "office"
+    },
+    {
+      "id": "ssix8b",
+      "title": "Họp 1:1 với Sarah",
+      "date": "2026-10-19",
+      "time": "14:00",
+      "mode": "office"
+    },
+    {
+      "id": "stwny1",
+      "title": "Duyệt chiến dịch",
+      "date": "2026-10-20",
+      "time": "11:00",
+      "mode": "office"
+    },
+    {
+      "id": "su9xf3",
+      "title": "Tập gym",
+      "date": "2026-10-20",
+      "time": "18:30",
+      "mode": "office"
+    },
+    {
+      "id": "svdpgd",
+      "title": "Họp nhanh",
+      "date": "2026-10-21",
+      "time": "09:30",
+      "mode": "office"
+    },
+    {
+      "id": "swbz7x",
+      "title": "Gọi agency",
+      "date": "2026-10-21",
+      "time": "15:00",
+      "mode": "office"
+    },
+    {
+      "id": "sx0egt",
+      "title": "Khám răng",
+      "date": "2026-10-09",
+      "time": "13:00",
+      "mode": "office"
+    },
+    {
+      "id": "syhsb9",
+      "title": "Workshop kế hoạch Q4",
+      "date": "2026-10-13",
+      "time": "10:00",
+      "mode": "office"
+    },
+    {
+      "id": "sz80c3",
+      "title": "Ăn tối sinh nhật mẹ",
+      "date": "2026-10-16",
+      "time": "19:00",
+      "mode": "office"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "s1057uq",
+      "title": "Gửi kết quả chiến dịch Q3 cho Sarah",
+      "done": false,
+      "mode": "office",
+      "due": "2026-10-07"
+    },
+    {
+      "id": "s11le9g",
+      "title": "Duyệt nội dung landing page mới",
+      "done": false,
+      "mode": "office",
+      "due": "2026-10-07"
+    },
+    {
+      "id": "s12sti4",
+      "title": "Đặt vé máy bay đi Berlin",
+      "done": false,
+      "mode": "office",
+      "due": "2026-10-10"
+    },
+    {
+      "id": "s138knz",
+      "title": "Gia hạn thẻ gym",
+      "done": false,
+      "mode": "office",
+      "due": "2026-10-12"
+    },
+    {
+      "id": "s14fib8",
+      "title": "Chuẩn bị slide họp ngân sách",
+      "done": false,
+      "mode": "office",
+      "due": "2026-10-08"
+    },
+    {
+      "id": "s15atju",
+      "title": "Trả lời email nhà tuyển dụng",
+      "done": false,
+      "mode": "office",
+      "due": ""
+    },
+    {
+      "id": "s16jx07",
+      "title": "Báo cáo chi phí tháng 9",
+      "done": true,
+      "mode": "office",
+      "due": "2026-10-05"
+    },
+    {
+      "id": "s17eiff",
+      "title": "Cập nhật OKR của nhóm",
+      "done": true,
+      "mode": "office",
+      "due": "2026-10-06"
+    }
+  ],
+  "sleep": {
+    "2026-09-24": {
+      "bed": "23:31",
+      "wake": "06:46"
+    },
+    "2026-09-25": {
+      "bed": "23:27",
+      "wake": "06:44"
+    },
+    "2026-09-26": {
+      "bed": "00:04",
+      "wake": "07:40"
+    },
+    "2026-09-27": {
+      "bed": "00:26",
+      "wake": "07:38"
+    },
+    "2026-09-28": {
+      "bed": "23:45",
+      "wake": "06:39"
+    },
+    "2026-09-29": {
+      "bed": "23:02",
+      "wake": "06:28"
+    },
+    "2026-09-30": {
+      "bed": "23:39",
+      "wake": "06:27"
+    },
+    "2026-10-01": {
+      "bed": "23:44",
+      "wake": "06:42"
+    },
+    "2026-10-02": {
+      "bed": "23:38",
+      "wake": "06:41"
+    },
+    "2026-10-03": {
+      "bed": "23:46",
+      "wake": "07:47"
+    },
+    "2026-10-04": {
+      "bed": "00:19",
+      "wake": "08:04"
+    },
+    "2026-10-05": {
+      "bed": "23:33",
+      "wake": "06:40"
+    },
+    "2026-10-06": {
+      "bed": "23:48",
+      "wake": "06:28"
+    },
+    "2026-10-07": {
+      "bed": "23:04",
+      "wake": "06:44"
+    }
+  },
+  "energy": {
+    "2026-09-24": [
+      {
+        "t": "09:29",
+        "v": 5
+      },
+      {
+        "t": "14:26",
+        "v": 3
+      },
+      {
+        "t": "19:26",
+        "v": 2
+      }
+    ],
+    "2026-09-25": [
+      {
+        "t": "09:20",
+        "v": 5
+      },
+      {
+        "t": "14:34",
+        "v": 3
+      },
+      {
+        "t": "19:08",
+        "v": 2
+      }
+    ],
+    "2026-09-26": [
+      {
+        "t": "09:06",
+        "v": 5
+      },
+      {
+        "t": "14:28",
+        "v": 3
+      },
+      {
+        "t": "19:42",
+        "v": 3
+      }
+    ],
+    "2026-09-27": [
+      {
+        "t": "09:12",
+        "v": 5
+      },
+      {
+        "t": "14:37",
+        "v": 2
+      },
+      {
+        "t": "19:14",
+        "v": 3
+      }
+    ],
+    "2026-09-28": [
+      {
+        "t": "09:28",
+        "v": 4
+      },
+      {
+        "t": "14:07",
+        "v": 3
+      },
+      {
+        "t": "19:41",
+        "v": 3
+      }
+    ],
+    "2026-09-29": [
+      {
+        "t": "09:24",
+        "v": 5
+      },
+      {
+        "t": "14:13",
+        "v": 3
+      },
+      {
+        "t": "19:36",
+        "v": 3
+      }
+    ],
+    "2026-09-30": [
+      {
+        "t": "09:31",
+        "v": 4
+      },
+      {
+        "t": "14:21",
+        "v": 3
+      },
+      {
+        "t": "19:17",
+        "v": 3
+      }
+    ],
+    "2026-10-01": [
+      {
+        "t": "09:15",
+        "v": 5
+      },
+      {
+        "t": "14:17",
+        "v": 3
+      },
+      {
+        "t": "19:08",
+        "v": 3
+      }
+    ],
+    "2026-10-02": [
+      {
+        "t": "09:29",
+        "v": 5
+      },
+      {
+        "t": "14:15",
+        "v": 3
+      },
+      {
+        "t": "19:00",
+        "v": 3
+      }
+    ],
+    "2026-10-03": [
+      {
+        "t": "09:44",
+        "v": 5
+      },
+      {
+        "t": "14:29",
+        "v": 3
+      },
+      {
+        "t": "19:28",
+        "v": 3
+      }
+    ],
+    "2026-10-04": [
+      {
+        "t": "09:46",
+        "v": 4
+      },
+      {
+        "t": "14:38",
+        "v": 3
+      },
+      {
+        "t": "19:03",
+        "v": 3
+      }
+    ],
+    "2026-10-05": [
+      {
+        "t": "09:40",
+        "v": 4
+      },
+      {
+        "t": "14:37",
+        "v": 3
+      },
+      {
+        "t": "19:21",
+        "v": 2
+      }
+    ],
+    "2026-10-06": [
+      {
+        "t": "09:49",
+        "v": 4
+      },
+      {
+        "t": "14:35",
+        "v": 3
+      },
+      {
+        "t": "19:45",
+        "v": 3
+      }
+    ],
+    "2026-10-07": []
+  },
+  "meals": {
+    "2026-10-01": [
+      {
+        "name": "Yến mạch chuối bơ đậu phộng",
+        "kcal": 358
+      },
+      {
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 428
+      },
+      {
+        "name": "Súp đậu lăng rau củ",
+        "kcal": 323
+      },
+      {
+        "name": "Cà phê sữa",
+        "kcal": 150
+      }
+    ],
+    "2026-10-02": [
+      {
+        "name": "Sữa chua Hy Lạp với quả mọng",
+        "kcal": 218
+      },
+      {
+        "name": "Bánh mì gà",
+        "kcal": 477
+      },
+      {
+        "name": "Salad gà nướng",
+        "kcal": 435
+      },
+      {
+        "name": "Cà phê sữa",
+        "kcal": 150
+      }
+    ],
+    "2026-10-03": [
+      {
+        "name": "Trứng ốp rau củ với bánh mì nướng",
+        "kcal": 296
+      },
+      {
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 459
+      },
+      {
+        "name": "Canh cá rau với cơm",
+        "kcal": 393
+      }
+    ],
+    "2026-10-04": [
+      {
+        "name": "Yến mạch chuối bơ đậu phộng",
+        "kcal": 360
+      },
+      {
+        "name": "Bánh mì gà",
+        "kcal": 508
+      },
+      {
+        "name": "Bánh mì gà",
+        "kcal": 513
+      }
+    ],
+    "2026-10-05": [
+      {
+        "name": "Sữa chua Hy Lạp với quả mọng",
+        "kcal": 234
+      },
+      {
+        "name": "Cuốn gà tây sốt hummus",
+        "kcal": 458
+      },
+      {
+        "name": "Salad gà nướng",
+        "kcal": 420
+      }
+    ],
+    "2026-10-06": [
+      {
+        "name": "Sữa chua Hy Lạp với quả mọng",
+        "kcal": 203
+      },
+      {
+        "name": "Salad gà nướng",
+        "kcal": 426
+      },
+      {
+        "name": "Súp đậu lăng rau củ",
+        "kcal": 325
+      },
+      {
+        "name": "Cà phê sữa",
+        "kcal": 150
+      }
+    ],
+    "2026-10-07": []
+  },
+  "water": {
+    "2026-09-24": 7,
+    "2026-09-25": 5,
+    "2026-09-26": 8,
+    "2026-09-27": 4,
+    "2026-09-28": 5,
+    "2026-09-29": 4,
+    "2026-09-30": 4,
+    "2026-10-01": 8,
+    "2026-10-02": 6,
+    "2026-10-03": 4,
+    "2026-10-04": 4,
+    "2026-10-05": 4,
+    "2026-10-06": 4,
+    "2026-10-07": 3
+  },
+  "mealPlan": [],
+  "grocery": {},
+  "quotes": [],
+  "gigs": [],
+  "sample": "office"
+}
