@@ -39,6 +39,9 @@
   function weekdayIndex(s) { return (parseIso(s).getDay() + 6) % 7; } // Mon = 0
   function byTime(a, b) { return (a.time || "").localeCompare(b.time || ""); }
   function byDue(a, b) { return (a.due || "9999").localeCompare(b.due || "9999"); }
+  function hexRgb(h) { h = h.replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  function mix(a, b, t) { var x = hexRgb(a), y = hexRgb(b); return "#" + x.map(function (v, i) { var c = Math.round(v + (y[i] - v) * t); return (c < 16 ? "0" : "") + c.toString(16); }).join(""); }
+  function rgba(h, a) { var c = hexRgb(h); return "rgba(" + c.join(",") + "," + a + ")"; }
   function findById(list, id) { return list.filter(function (x) { return x.id === id; })[0]; }
 
   // ---------- state ----------
@@ -191,9 +194,15 @@
     if (active && active.getAttribute && active.getAttribute("data-key")) UI.focusKey = active.getAttribute("data-key");
     document.documentElement.lang = S.lang;
     var accent = DATA.modes[S.active] ? DATA.modes[S.active].accent : "#2F5BEA";
-    document.documentElement.style.setProperty("--accent", accent);
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var rs = document.documentElement.style;
+    rs.setProperty("--accent", accent);
+    rs.setProperty("--accent-2", mix(accent, "#A855F7", 0.35));
+    rs.setProperty("--accent-dark", mix(accent, "#000000", 0.18));
+    rs.setProperty("--accent-soft", rgba(accent, dark ? 0.28 : 0.14));
     var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute("content", accent);
     app.innerHTML = (S.onboarded ? shell() : onboarding()) + modal();
+    UI.enter = false;
     restoreDrafts();
     if (UI.focusKey) { var el = app.querySelector('[data-key="' + UI.focusKey + '"]'); if (el) el.focus(); UI.focusKey = null; }
     if (UI.modal && UI.modalJustOpened) { var f = app.querySelector(".modal input, .modal select, .modal button"); if (f) f.focus(); UI.modalJustOpened = false; }
@@ -225,7 +234,7 @@
       '<div class="top-right"><button type="button" class="credit-badge" data-act="credits" aria-label="' + esc(t("credits_title") + ": " + S.credits) + '">' + icon("spark", 14) + "<b>" + S.credits + '</b><span class="credit-word">' + esc(t("credits")) + "</span>" + (claimed ? "" : '<span class="dot" aria-hidden="true"></span>') + "</button>" +
       '<button type="button" class="lang-btn" data-act="lang" aria-label="' + esc(t("m_language")) + '">' + icon("globe", 16) + "<span>" + (S.lang === "vi" ? "EN" : "VI") + "</span></button></div></header>" +
       chips + '<nav class="nav" aria-label="Main">' + nav + "</nav>" +
-      '<main class="main" id="main">' + screen + "</main></div>" +
+      '<main class="main' + (UI.enter ? " enter" : "") + '" id="main">' + screen + "</main></div>" +
       '<div id="toast" class="toast" role="status" aria-live="polite"></div>';
   }
 
@@ -263,7 +272,7 @@
     var built = window.DAHAND_SAMPLES.build(pid, S.lang, today());
     if (!built) return;
     S = migrate(Object.assign(fresh(), built, { currency: built.currency || "USD", tips: { welcome: false } })); save();
-    UI.ob = 0; UI.tab = "today"; UI.modal = null; UI.drafts = {}; window.scrollTo(0, 0); render();
+    UI.ob = 0; UI.tab = "today"; UI.modal = null; UI.drafts = {}; UI.enter = true; window.scrollTo(0, 0); render();
     toast(t("sample_loaded_name", { name: S.name })); track("sample_" + pid);
   }
 
@@ -333,7 +342,7 @@
     var next = evs.filter(function (e) { return !e.time || e.time >= nowHM(); })[0];
     var c = calorieInfo(), sl = sleepHours(d), st = energyStats();
     var lines = [];
-    lines.push(evs.length ? t("brief_events", { n: evs.length, next: next ? (next.time ? next.time + " " : "") + next.title : "—" }) : t("brief_no_events"));
+    lines.push(!evs.length ? t("brief_no_events") : next ? t("brief_events", { n: evs.length, next: (next.time ? next.time + " " : "") + next.title }) : t("brief_events_done", { n: evs.length }));
     lines.push(open.length ? t("brief_tasks", { n: open.length, d: dueToday }) : t("brief_no_tasks"));
     var ml = modeBriefLine(); if (ml) lines.push(ml);
     if (sl) lines.push(t("brief_sleep", { h: sl }));
@@ -764,15 +773,15 @@
       case "ob-finish":
         S.modes = DATA.modeOrder.filter(function (m) { return m === "office" || UI.obModes[m]; });
         S.active = S.modes[S.modes.length > 1 ? 1 : 0]; S.onboarded = true; S.tips = { welcome: true };
-        save(); UI.tab = "today"; render(); track("onboarding_done"); return;
+        save(); UI.tab = "today"; UI.enter = true; render(); track("onboarding_done"); return;
       case "sample": if (S.onboarded && !window.confirm(t("sample_confirm"))) return; loadSample(v); return;
       case "open-samples": openModal({ kind: "samples" }); return;
       case "hide-welcome": S.tips.welcome = false; break;
       case "gs-task": UI.focusKey = "qtask.title"; render(); var q = app.querySelector('[data-key="qtask.title"]'); if (q) { q.scrollIntoView({ block: "center" }); q.focus(); } return;
       case "gs-energy": var ec = document.getElementById("energy-card"); if (ec) ec.scrollIntoView({ block: "center", behavior: "smooth" }); return;
       case "gs-food": UI.tab = "routine"; UI.showBody = true; S.track = true; save(); render(); var fc = document.getElementById("food-card"); if (fc) fc.scrollIntoView({ block: "start" }); return;
-      case "mode": S.active = v; track("mode_" + v); break;
-      case "tab": UI.tab = v; UI.modal = null; window.scrollTo(0, 0); track("tab_" + v); break;
+      case "mode": S.active = v; UI.enter = true; track("mode_" + v); break;
+      case "tab": UI.tab = v; UI.modal = null; UI.enter = true; window.scrollTo(0, 0); track("tab_" + v); break;
       case "plan-tab": UI.planTab = v; break;
       case "credits": openModal({ kind: "credits" }); return;
       case "bonus":

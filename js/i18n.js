@@ -35,7 +35,7 @@ window.DAHAND_I18N = {
     // today
     greet_morning: "Good morning, {name}", greet_afternoon: "Good afternoon, {name}", greet_evening: "Good evening, {name}", friend: "friend",
     briefing: "Today's briefing",
-    brief_events: "Events today: {n}. Next: {next}.", brief_no_events: "No events today.",
+    brief_events: "Events today: {n}. Next: {next}.", brief_events_done: "Events today: {n} — all done.", brief_no_events: "No events today.",
     brief_tasks: "Open tasks: {n} ({d} due today).", brief_no_tasks: "No open tasks.",
     brief_kcal: "About {n} kcal left today.", brief_sleep: "You slept {h} h last night.",
     brief_home: "Tonight's dinner: {meal}. {n} items left on the grocery list.",
@@ -155,7 +155,7 @@ window.DAHAND_I18N = {
     daily_bonus: "Nhận credit hôm nay +{n}", daily_claimed: "Đã nhận credit hôm nay — mai quay lại nhé",
     greet_morning: "Chào buổi sáng, {name}", greet_afternoon: "Chào buổi chiều, {name}", greet_evening: "Chào buổi tối, {name}", friend: "bạn",
     briefing: "Tóm tắt hôm nay",
-    brief_events: "Hôm nay có {n} lịch, tiếp theo: {next}.", brief_no_events: "Hôm nay không có lịch.",
+    brief_events: "Hôm nay có {n} lịch, tiếp theo: {next}.", brief_events_done: "Hôm nay có {n} lịch — đã xong hết.", brief_no_events: "Hôm nay không có lịch.",
     brief_tasks: "{n} việc chưa xong ({d} việc hạn hôm nay).", brief_no_tasks: "Không còn việc nào.",
     brief_kcal: "Còn khoảng {n} kcal hôm nay.", brief_sleep: "Đêm qua bạn ngủ {h} tiếng.",
     brief_home: "Tối nay ăn: {meal}. Danh sách đi chợ còn {n} món.",
