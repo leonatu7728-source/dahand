@@ -25,13 +25,16 @@
     (p.once || []).forEach(function (e) { out.push({ id: uid(), title: L(e[2], lang), date: add(today, e[0]), time: e[1], mode: e[3] }); });
     return out;
   }
-  function buildTasks(p, today, lang) {
-    return (p.tasks || []).map(function (t) { return { id: uid(), title: L(t[0], lang), done: !!t[2], mode: t[3], due: t[1] === null ? "" : add(today, t[1]) }; });
+  function buildTasks(p, today, lang, r) {
+    var out = (p.tasks || []).map(function (t) { return { id: uid(), title: L(t[0], lang), done: !!t[2], doneAt: t[2] ? add(today, -(1 + Math.floor(r() * 6))) : "", mode: t[3], due: t[1] === null ? "" : add(today, t[1]) }; });
+    // A few finished tasks from the last two weeks so the weekly review has something to compare.
+    (p.history || []).forEach(function (h, i) { out.push({ id: uid(), title: L(h, lang), done: true, doneAt: add(today, -(1 + (i * 3 + Math.floor(r() * 3)) % 13)), mode: p.modes[0], due: "" }); });
+    return out;
   }
   function buildHealth(p, today, r) {
-    var sleep = {}, energy = {}, meals = {}, water = {};
+    var sleep = {}, energy = {}, meals = {}, water = {}, checks = {};
     var M = window.DAHAND_DATA.meals;
-    for (var o = -13; o <= 0; o++) {
+    for (var o = -29; o <= 0; o++) {
       var d = add(today, o);
       var weekend = dow(d) === 0 || dow(d) === 6;
       var bed = p.bed + Math.round((r() - 0.5) * 60) + (weekend ? 40 : 0);
@@ -40,9 +43,14 @@
       var nowH = new Date().getHours(), slots = {};
       [["m", 9], ["a", 14], ["e", 19]].forEach(function (x) {
         if (o === 0 && x[1] >= nowH) return;
-        slots[x[0]] = Math.max(1, Math.min(5, Math.round(3 + (Math.abs(x[1] - p.peak) < 3 ? 1.4 : -0.3) + (r() - 0.5) * 1.6)));
+        var slept = ((wake - bed) % 1440 + 1440) % 1440 / 60; // short nights → lower energy next day
+        slots[x[0]] = Math.max(1, Math.min(5, Math.round(3 + (Math.abs(x[1] - p.peak) < 3 ? 1.4 : -0.3) + (slept < 7 ? -0.9 : 0.2) + (r() - 0.5) * 1.4)));
       });
       energy[d] = slots;
+      checks[d] = Object.keys(slots).map(function (k) {
+        var v = slots[k];
+        return { t: { m: "09:10", a: "14:10", e: "19:10" }[k], body: v, mood: Math.max(1, Math.min(5, v + Math.round((r() - 0.5) * 2))), stress: v <= 2 ? 3 : v >= 4 ? 1 : 2 };
+      });
       if (o >= -6) {
         var picks = o < 0 ? ["breakfast", "lunch", "dinner"] : (nowH >= 13 ? ["breakfast", "lunch"] : nowH >= 9 ? ["breakfast"] : []);
         meals[d] = picks.map(function (type) {
@@ -54,7 +62,7 @@
       }
       water[d] = o === 0 ? 3 : 4 + Math.floor(r() * 5);
     }
-    return { sleep: sleep, energy: energy, meals: meals, water: water };
+    return { sleep: sleep, energy: energy, meals: meals, water: water, checks: checks };
   }
 
   var PERSONAS = [
@@ -70,6 +78,7 @@
         [5, "16:00", ["Weekly report due", "Hạn nộp báo cáo tuần"], "office"], [6, "11:00", ["Brunch with Chloe", "Ăn brunch với Chloe"], "office"]
       ],
       once: [[2, "13:00", ["Dentist", "Khám răng"], "office"], [6, "10:00", ["Q4 planning workshop", "Workshop kế hoạch Q4"], "office"], [9, "19:00", ["Mum's birthday dinner", "Ăn tối sinh nhật mẹ"], "office"]],
+      history: [["Send meeting notes", "Gửi biên bản họp"], ["Book dentist", "Đặt lịch nha sĩ"], ["Reply to HR", "Trả lời HR"], ["Update slides", "Sửa slide"], ["Pay phone bill", "Đóng tiền điện thoại"], ["Order printer ink", "Đặt mực in"]],
       tasks: [
         [["Send Q3 campaign results to Sarah", "Gửi kết quả chiến dịch Q3 cho Sarah"], 0, false, "office"],
         [["Approve new landing page copy", "Duyệt nội dung landing page mới"], 0, false, "office"],
@@ -94,6 +103,7 @@
         [6, "09:00", ["Grocery run", "Đi chợ cuối tuần"], "home"], [0, "11:00", ["Lunch at grandma's", "Ăn trưa nhà bà"], "home"]
       ],
       once: [[1, "08:30", ["Parent–teacher meeting", "Họp phụ huynh"], "home"], [4, "14:00", ["Kids' vaccination", "Tiêm phòng cho con"], "home"], [8, "10:00", ["Tax filing deadline – client", "Hạn khai thuế cho khách"], "office"]],
+      history: [["Pay school fees", "Đóng học phí cho con"], ["Book pediatrician", "Đặt lịch khám nhi"], ["Send client invoice", "Gửi hóa đơn cho khách"], ["Buy school shoes", "Mua giày đi học"], ["Clean the fridge", "Dọn tủ lạnh"], ["Renew car insurance", "Gia hạn bảo hiểm xe"]],
       tasks: [
         [["Pay electricity and water bills", "Đóng tiền điện, nước"], 0, false, "home"],
         [["Reconcile Bloom Café bank statement", "Đối chiếu sao kê Bloom Café"], 1, false, "office"],
@@ -116,6 +126,7 @@
         [1, "19:00", ["Climbing", "Leo núi trong nhà"], "office"], [4, "19:00", ["Climbing", "Leo núi trong nhà"], "office"]
       ],
       once: [[1, "11:00", ["Site visit – Park wedding", "Khảo sát địa điểm – cưới nhà Park"], "freelancer"], [3, "16:00", ["Headshots – Studio Kite", "Chụp chân dung – Studio Kite"], "freelancer"], [12, "12:00", ["Park wedding", "Cưới nhà Park"], "freelancer"]],
+      history: [["Edit Harper wedding photos", "Chỉnh ảnh cưới Harper"], ["Send quote to Café Nero", "Gửi báo giá Café Nero"], ["Back up hard drives", "Sao lưu ổ cứng"], ["Update portfolio", "Cập nhật portfolio"], ["Pay VAT", "Nộp thuế VAT"], ["Clean lenses", "Vệ sinh ống kính"]],
       tasks: [
         [["Deliver Lee birthday gallery", "Giao album sinh nhật nhà Lee"], 0, false, "freelancer"],
         [["Follow up Gomez quote", "Nhắc lại báo giá cho Gomez"], 0, false, "freelancer"],
@@ -143,6 +154,7 @@
         [0, "12:00", ["Post weekly content", "Đăng nội dung tuần"], "freelancer"]
       ],
       once: [[2, "21:00", ["The Velvet Room", "The Velvet Room"], "artist"], [5, "15:00", ["Photo shoot – press kit", "Chụp ảnh press kit"], "artist"], [10, "19:30", ["Harbor Fest soundcheck", "Soundcheck Harbor Fest"], "artist"], [11, "20:00", ["Harbor Fest", "Harbor Fest"], "artist"]],
+      history: [["Rehearse new set", "Tập set nhạc mới"], ["Send rider to venue", "Gửi rider cho địa điểm"], ["Post tour poster", "Đăng poster tour"], ["Record vocal demo", "Thu demo giọng"], ["Reply to Glow brief", "Trả lời brief Glow"], ["Pay band members", "Trả tiền ban nhạc"]],
       tasks: [
         [["Send rider to Harbor Fest", "Gửi rider cho Harbor Fest"], 0, false, "artist"],
         [["Chase Velvet Room deposit", "Nhắc cọc The Velvet Room"], 0, false, "artist"],
@@ -168,15 +180,30 @@
     var r = rng(p.seed);
     p.lang = lang;
     var health = buildHealth(p, today, r);
+    var peak = p.peak < 12 ? "m" : p.peak < 17 ? "a" : "e";
+    var events = buildEvents(p, today, lang);
+    // Real timing history: past events took a bit longer than planned (meetings run over, etc.).
+    var logs = events.filter(function (e) { return e.date < today && e.date >= add(today, -7) && e.time; }).slice(0, 12).map(function (e) {
+      var actual = Math.round(60 * (1.1 + r() * 0.35)), st = +e.time.slice(0, 2) * 60 + +e.time.slice(3, 5);
+      return { ref: e.id, kind: "event", title: e.title, cat: "", planned: 60, actual: actual, date: e.date, start: e.time, end: hm(st + actual) };
+    });
+    var quotes = (p.quotes || []).map(function (q) {
+      var inv = -(6 + Math.floor(r() * 14)), x = { id: uid(), client: q[0], service: L(q[1], lang), amount: q[2], stage: q[3] };
+      x.createdAt = add(today, q[3] === 0 ? -(6 + Math.floor(r() * 4)) : inv - 5);
+      if (q[3] >= 2) x.invoicedAt = add(today, inv);
+      if (q[3] === 3) x.paidAt = add(today, -Math.floor(r() * 5));
+      return x;
+    });
     return {
       v: 2, lang: lang, onboarded: true, name: p.name.split(" ")[0], modes: p.modes.slice(), active: p.modes[p.modes.length > 1 ? 1 : 0],
       profile: Object.assign({}, p.profile), track: true, hideNumbers: false,
       credits: 50, lastBonus: "", currency: "USD",
-      events: buildEvents(p, today, lang), tasks: buildTasks(p, today, lang),
-      sleep: health.sleep, energy: health.energy, meals: health.meals, water: health.water,
+      events: events, tasks: buildTasks(p, today, lang, r), logs: logs,
+      sleep: health.sleep, energy: health.energy, checks: health.checks, meals: health.meals, water: health.water,
       mealPlan: p.mealPlan ? p.mealPlan.slice() : [], grocery: {},
-      quotes: (p.quotes || []).map(function (q) { return { id: uid(), client: q[0], service: L(q[1], lang), amount: q[2], stage: q[3] }; }),
-      gigs: (p.gigs || []).map(function (g) { return { id: uid(), venue: g[0], date: add(today, g[1]), fee: g[2], deposit: g[3], depPaid: g[4], fullPaid: g[5] }; }),
+      quotes: quotes,
+      gigs: (p.gigs || []).map(function (g) { return { id: uid(), venue: g[0], date: add(today, g[1]), fee: g[2], deposit: g[3], depPaid: g[4], fullPaid: g[5], paidAt: g[5] ? add(today, Math.min(0, g[1] + 1)) : "" }; }),
+      rhythm: { bed: hm(p.bed), wake: hm(p.wake), peak: peak },
       sample: pid
     };
   }

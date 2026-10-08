@@ -19,6 +19,11 @@
   function addDays(s, n) { var d = parseIso(s); d.setDate(d.getDate() + n); return iso(d); }
   function nowHM() { var d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   function uid() { return Math.random().toString(36).slice(2, 10); }
+  function newDeviceId() {
+    var a = new Uint8Array(10);
+    try { (window.crypto || window.msCrypto).getRandomValues(a); } catch (e) { for (var i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256); }
+    return Array.prototype.map.call(a, function (b) { return (b < 16 ? "0" : "") + b.toString(16); }).join("");
+  }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function locale() { return S.lang === "vi" ? "vi-VN" : "en-US"; }
   function money(n) {
@@ -53,7 +58,10 @@
       credits: CFG.START_CREDITS || 50, lastBonus: "", lastOpen: "",
       currency: CFG.DEFAULT_CURRENCY || "USD", tips: { welcome: true },
       events: [], tasks: [], sleep: {}, energy: {}, meals: {}, water: {},
-      mealPlan: [], grocery: {}, quotes: [], gigs: [], sample: ""
+      mealPlan: [], grocery: {}, quotes: [], gigs: [], sample: "",
+      deviceId: newDeviceId(), updatedAt: 0, lastSync: 0,
+      rhythm: null, reminders: { morning: "08:00", evening: "21:00", notify: false, set: false },
+      logs: [], run: null, restUntil: 0, focus: {}, checkins: {}, checks: {}, streakRewards: {}, unlocks: {}, lastWeekly: ""
     };
   }
   // Upgrade older saved data to the current schema.
@@ -72,12 +80,16 @@
     }
     if (!s.tips) s.tips = { welcome: false };
     if (!s.currency) s.currency = CFG.DEFAULT_CURRENCY || "USD";
+    if (!s.deviceId || !/^[a-z0-9]{8,64}$/i.test(s.deviceId)) s.deviceId = newDeviceId();
+    if (!s.reminders || !s.reminders.morning) s.reminders = { morning: "08:00", evening: "21:00", notify: false, set: false };
+    if (!Array.isArray(s.logs)) s.logs = [];
+    ["focus", "checkins", "checks", "streakRewards", "unlocks"].forEach(function (k) { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
     return prune(s);
   }
   // Keep only the last KEEP_DAYS days of daily logs.
   function prune(s) {
     var cutoff = addDays(today(), -KEEP_DAYS);
-    ["sleep", "energy", "meals", "water"].forEach(function (k) {
+    ["sleep", "energy", "meals", "water", "focus", "checkins", "checks"].forEach(function (k) {
       Object.keys(s[k] || {}).forEach(function (d) { if (d < cutoff) delete s[k][d]; });
     });
     return s;
@@ -86,11 +98,16 @@
     try { var raw = localStorage.getItem(KEY); if (raw) return migrate(JSON.parse(raw)); } catch (e) { /* ignore */ }
     return fresh();
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
+  function save(silent) {
+    if (!silent) { S.updatedAt = Date.now(); if (S.onboarded) checkMilestones(); }
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+    if (!silent) scheduleSync();
+  }
 
   var S = load();
   var UI = { ob: 0, obModes: { home: false, freelancer: false, artist: false }, tab: "today", planTab: "calendar", showDone: false,
-    inboxText: "", found: null, modal: null, drafts: {}, undo: null, showBody: false, focusKey: null };
+    inboxText: "", found: null, modal: null, drafts: {}, undo: null, showBody: false, focusKey: null,
+    obR: { bed: "23:00", wake: "07:00", peak: null } };
 
   // ---------- analytics (optional, anonymous) ----------
   var analyticsQueue = [];
@@ -108,6 +125,7 @@
     }
   }
   function track(name) {
+    if (CFG.SHEET_ENDPOINT) { sheetEvents.push({ t: Date.now(), name: name, mode: S.active, lang: S.lang }); scheduleSync(); }
     if (!CFG.GOATCOUNTER_CODE && !CFG.UMAMI_WEBSITE_ID) return;
     analyticsQueue.push(name); flushAnalytics();
   }
@@ -119,6 +137,72 @@
       try { if (gc) window.goatcounter.count({ path: "event/" + n, title: n, event: true }); if (um) window.umami.track(n); } catch (e) { /* ignore */ }
     }
   }
+
+
+  // ---------- Google Sheets sync (optional) ----------
+  var sheetEvents = [], syncTimer = null;
+  UI.sync = CFG.SHEET_ENDPOINT ? "idle" : "off";
+  function summary() {
+    var week = []; for (var i = 0; i < 7; i++) week.push(addDays(today(), -i));
+    var en = [], sl = [], meals = 0;
+    week.forEach(function (d) {
+      var day = S.energy[d] || {}; SLOTS.forEach(function (k) { if (day[k]) en.push(day[k]); });
+      var h = sleepHours(d); if (h) sl.push(h);
+      meals += (S.meals[d] || []).length;
+    });
+    var avg = function (a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length * 10) / 10 : ""; };
+    return { name: S.name, lang: S.lang, modes: S.modes, active: S.active, sample: S.sample || "",
+      tasksOpen: S.tasks.filter(function (x) { return !x.done; }).length, tasksDone: S.tasks.filter(function (x) { return x.done; }).length,
+      events: S.events.length, energy7d: en.length, avgEnergy7d: avg(en), avgSleep7d: avg(sl), meals7d: meals,
+      tracking: !!(S.track && S.profile), credits: S.credits, quotes: S.quotes.length, gigs: S.gigs.length,
+      streak: streakInfo().n, bestSlot: (bestSlot() || {}).slot || "", reminders: S.reminders && S.reminders.set };
+  }
+  function scheduleSync() {
+    if (!CFG.SHEET_ENDPOINT || !S.onboarded) return;
+    clearTimeout(syncTimer); syncTimer = setTimeout(function () { syncTimer = null; pushSync(); }, 2500);
+  }
+  function pushSync(useKeepalive) {
+    if (!CFG.SHEET_ENDPOINT || !S.onboarded) return;
+    clearTimeout(syncTimer); syncTimer = null;
+    var dirty = S.updatedAt && S.updatedAt !== S.syncedVersion;
+    if (!dirty && !sheetEvents.length && !sheetTimings.length) { UI.sync = "ok"; paintSync(); return Promise.resolve(); }
+    var events = sheetEvents.splice(0, sheetEvents.length), version = S.updatedAt;
+    var timings = sheetTimings.splice(0, sheetTimings.length);
+    var payload = { type: "sync", id: S.deviceId, updatedAt: version, summary: summary(), events: events, timings: timings };
+    if (dirty) payload.state = JSON.stringify(S);
+    var body = JSON.stringify(payload);
+    var opts = { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: body };
+    if (useKeepalive && body.length < 60000) opts.keepalive = true;
+    UI.sync = "saving"; paintSync();
+    return fetch(CFG.SHEET_ENDPOINT, opts).then(function () {
+      S.lastSync = Date.now(); if (dirty) S.syncedVersion = version; save(true); UI.sync = "ok"; paintSync();
+    }).catch(function () {
+      sheetEvents = events.concat(sheetEvents); sheetTimings = timings.concat(sheetTimings); UI.sync = "error"; paintSync();
+    });
+  }
+  function pullSync(id) {
+    var url = CFG.SHEET_ENDPOINT + (CFG.SHEET_ENDPOINT.indexOf("?") > -1 ? "&" : "?") + "id=" + encodeURIComponent(id);
+    return fetch(url).then(function (r) { return r.json(); });
+  }
+  function paintSync() {
+    var el = document.getElementById("sync-status"); if (el) el.textContent = syncLabel();
+  }
+  function syncLabel() {
+    if (UI.sync === "off") return t("sync_off");
+    if (UI.sync === "saving") return t("sync_saving");
+    if (UI.sync === "error") return t("sync_error");
+    return S.lastSync ? t("sync_last", { t: new Date(S.lastSync).toLocaleString(locale(), { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" }) }) : t("sync_waiting");
+  }
+  // On start: if another device saved newer data under the same code, use it.
+  function startupPull() {
+    if (!CFG.SHEET_ENDPOINT || !S.onboarded) return;
+    pullSync(S.deviceId).then(function (r) {
+      if (r && r.found && r.updatedAt > (S.updatedAt || 0) && r.state) {
+        S = migrate(JSON.parse(r.state)); S.syncedVersion = S.updatedAt = r.updatedAt; save(true); render(); toast(t("sync_pulled"));
+      } else if (!r || !r.found) { scheduleSync(); }
+    }).catch(function () { UI.sync = "error"; paintSync(); });
+  }
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden" && (syncTimer || sheetEvents.length || sheetTimings.length)) pushSync(true); });
 
   // ---------- calories / sleep / energy ----------
   function calorieInfo() {
@@ -169,6 +253,621 @@
   }
   function ingName(k) { var p = DATA.ingredients[k]; return p ? p[S.lang === "vi" ? 1 : 0] : k; }
 
+  // ---------- habits: streak, rhythm, reviews ----------
+  var MILESTONES = [[3, 5], [7, 10], [14, 15], [30, 30]]; // [days in a row, bonus credits]
+  var MONTH_COST = 10;                                     // credits to unlock one month's review
+  var PEAK = { m: ["09:00", "10:30"], a: ["14:00", "15:30"], e: ["19:00", "20:30"] }; // 90-min focus block per slot
+  function mean(a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length * 10) / 10 : null; }
+  function dec(n) { return n == null ? "–" : String(n).replace(".", S.lang === "vi" ? "," : "."); }
+  function checkedIn(d) { return !!(Object.keys(S.energy[d] || {}).length || S.sleep[d] || (S.checkins || {})[d]); }
+  function streakInfo() {
+    var d = today(), n = 0, start = "";
+    if (!checkedIn(d)) d = addDays(d, -1);
+    while (n < 400 && checkedIn(d)) { n++; start = d; d = addDays(d, -1); }
+    return { n: n, start: start, today: checkedIn(today()) };
+  }
+  function nextMilestone(n) { for (var i = 0; i < MILESTONES.length; i++) if (MILESTONES[i][0] > n) return MILESTONES[i]; return null; }
+  // Sample / imported data already has a long streak: don't pay rewards for days the person didn't do.
+  function markStreakSeen() {
+    var s = streakInfo(); S.streakRewards = {};
+    MILESTONES.forEach(function (m) { if (s.n >= m[0]) S.streakRewards[m[0] + "@" + s.start] = today(); });
+  }
+  function checkMilestones() {
+    var s = streakInfo(), got = null; S.streakRewards = S.streakRewards || {};
+    MILESTONES.forEach(function (m) {
+      var k = m[0] + "@" + s.start;
+      if (s.n >= m[0] && !S.streakRewards[k]) { S.streakRewards[k] = today(); S.credits += m[1]; got = m; }
+    });
+    if (got) { setTimeout(function () { toast(t("streak_reward", { n: got[0], c: got[1] })); }, 900); track("streak_" + got[0]); }
+  }
+  function bestSlot() {
+    var st = energyStats();
+    if (st.best) return { slot: st.best, real: true };
+    if (S.rhythm && S.rhythm.peak) return { slot: S.rhythm.peak, real: false };
+    return null;
+  }
+  function hoursBetween(bed, wake) {
+    var b = bed.split(":"), w = wake.split(":"), m = (+w[0] * 60 + +w[1]) - (+b[0] * 60 + +b[1]);
+    if (m <= 0) m += 1440; return Math.round(m / 6) / 10;
+  }
+  function usualSleep() {
+    for (var i = 1; i <= 7; i++) { var s = S.sleep[addDays(today(), -i)]; if (s && s.bed && s.wake) return s; }
+    return S.rhythm ? { bed: S.rhythm.bed, wake: S.rhythm.wake } : null;
+  }
+  function lastSunday() { var d = today(), wi = weekdayIndex(d); return wi === 6 ? d : addDays(d, -(wi + 1)); }
+  function daysSince(s) { return s ? Math.round((parseIso(today()) - parseIso(s)) / 864e5) : null; }
+
+  function periodStats(end, days) {
+    var en = [], sl = [], ci = 0, slot = { m: [], a: [], e: [] }, byDay = [], hi = [], lo = [], wk = [[], [], [], [], [], [], []];
+    var from = addDays(end, -(days - 1));
+    for (var i = 0; i < days; i++) {
+      var d = addDays(end, -i), day = S.energy[d] || {}, vals = [];
+      SLOTS.forEach(function (k) { if (day[k]) { vals.push(day[k]); slot[k].push(day[k]); } });
+      var av = mean(vals), h = sleepHours(d);
+      if (av != null) { en.push(av); byDay.push({ d: d, v: av }); wk[weekdayIndex(d)].push(av); }
+      if (h) sl.push(h);
+      if (h && av != null) (h >= 7 ? hi : lo).push(av); // sleep on date d = the night before day d
+      if (checkedIn(d)) ci++;
+    }
+    var inRange = function (x) { return x && x >= from && x <= end; };
+    var done = S.tasks.filter(function (x) { return x.done && inRange(x.doneAt); }).length;
+    var paid = S.quotes.filter(function (q) { return q.stage === 3 && inRange(q.paidAt); }).reduce(function (a, q) { return a + (+q.amount || 0); }, 0) +
+      S.gigs.filter(function (g) { return g.fullPaid && inRange(g.paidAt); }).reduce(function (a, g) { return a + (+g.fee || 0); }, 0);
+    byDay.sort(function (a, b) { return b.v - a.v; });
+    var bs = null;
+    SLOTS.forEach(function (k) { if (slot[k].length >= 2 && (!bs || mean(slot[k]) > mean(slot[bs]))) bs = k; });
+    var link = hi.length >= 2 && lo.length >= 2 && mean(hi) - mean(lo) >= 0.3; // only when the difference is clear
+    return { days: days, from: from, end: end, energy: mean(en), sleep: mean(sl), checkins: ci, done: done, paid: paid,
+      best: byDay.length >= 3 ? byDay[0] : null, worst: byDay.length >= 3 ? byDay[byDay.length - 1] : null, slot: bs,
+      hi: link ? mean(hi) : null, lo: link ? mean(lo) : null, wk: wk.map(mean) };
+  }
+  function deltaHtml(cur, prev, unit) {
+    if (cur == null || prev == null) return "";
+    var diff = Math.round((cur - prev) * 10) / 10;
+    if (!diff) return '<small class="delta">= ' + esc(t("rv_same")) + "</small>";
+    return '<small class="delta ' + (diff > 0 ? "up" : "down") + '">' + (diff > 0 ? "+" : "−") + esc(dec(Math.abs(diff))) + (unit || "") + " " + esc(t("rv_vs")) + "</small>";
+  }
+  function reviewHtml(days, end) {
+    var c = periodStats(end, days), p = periodStats(addDays(end, -days), days), L = [];
+    var row = function (label, val, cur, prev, unit) {
+      if (cur == null || prev == null) return [label, val];
+      var diff = Math.round((cur - prev) * 10) / 10;
+      return [label, val + " (" + (diff ? (diff > 0 ? "+" : "−") + dec(Math.abs(diff)) + (unit || "") + " " + t("rv_vs") : t("rv_same")) + ")", diff > 0 ? "ok-text" : diff < 0 ? "bad-text" : ""];
+    };
+    var html = '<p class="note">' + esc(dayLabel(c.from) + " – " + dayLabel(c.end)) + "</p>" + kv([
+      row(t("rv_sleep"), c.sleep != null ? dec(c.sleep) + "h" : "–", c.sleep, p.sleep, "h"),
+      row(t("rv_energy"), c.energy != null ? dec(c.energy) + "/5" : "–", c.energy, p.energy, ""),
+      row(t("rv_done"), String(c.done), c.done, p.done, ""),
+      [t("rv_checkins"), c.checkins + "/" + days]]);
+    if (c.best && c.worst && c.best.d !== c.worst.d) L.push(t("rv_best_day", { best: dayLabel(c.best.d), b: dec(c.best.v), worst: dayLabel(c.worst.d), w: dec(c.worst.v) }));
+    if (c.slot) L.push(t("rv_slot", { slot: t("slot_" + c.slot + "_long") }));
+    if (c.hi != null) L.push(t("rv_sleep_link", { hi: dec(c.hi), lo: dec(c.lo) }));
+    if (days > 7) {
+      var filled = c.wk.map(function (v, i) { return { v: v, i: i }; }).filter(function (x) { return x.v != null; }).sort(function (a, b) { return b.v - a.v; });
+      if (filled.length >= 4) L.push(t("rv_weekday", { best: t("days")[filled[0].i], worst: t("days")[filled[filled.length - 1].i] }));
+    }
+    if (c.paid) L.push(t("rv_paid", { amount: money(c.paid) }));
+    var s = streakInfo(); if (s.n >= 2) L.push(t("rv_streak", { n: s.n }));
+    var tip = c.checkins < Math.ceil(days * 0.6) ? t("rv_tip_checkin")
+      : (c.sleep != null && c.sleep < 7) ? t("rv_tip_sleep")
+      : c.slot ? t("rv_tip_slot", { slot: t("slot_" + c.slot + "_long"), range: PEAK[c.slot].join("–") })
+      : t("rv_tip_keep");
+    html += L.length ? '<h3 class="sub-h">' + esc(t("an_title")) + "</h3>" + ulist(L) : '<p class="muted">' + esc(t("rv_empty")) + "</p>";
+    if (days > 7 && c.wk.some(function (v) { return v != null; })) {
+      html += '<h3 class="sub-h">' + esc(t("rv_by_weekday")) + '</h3><div class="sleep-bars">' + c.wk.map(function (v, i) {
+        return '<div class="sb"><span class="sb-val">' + (v != null ? esc(dec(v)) : "") + '</span><div class="sb-track short"><span class="sb-bar" style="height:' + (v ? v / 5 * 100 : 0) + '%"></span></div><span class="sb-day">' + esc(t("days")[i]) + "</span></div>";
+      }).join("") + "</div>";
+    }
+    return html + '<h3 class="sub-h">' + esc(t("rv_next")) + "</h3>" + ulist([tip], "tip-list");
+  }
+  function openReview(days, end) {
+    if (days > 7) {
+      var key = "month:" + today().slice(0, 7);
+      S.unlocks = S.unlocks || {};
+      if (!S.unlocks[key]) {
+        if (S.credits < MONTH_COST) { toast(t("ai_not_enough")); openModal({ kind: "credits" }); return; }
+        if (!window.confirm(t("rv_unlock_confirm", { n: MONTH_COST }))) return;
+        S.credits -= MONTH_COST; S.unlocks[key] = today(); save(); track("review_month_unlock");
+      }
+    }
+    if (end && end !== today()) { S.lastWeekly = end; save(); }
+    track(days > 7 ? "review_month" : "review_week");
+    openModal({ kind: "review", days: days, end: end || today() });
+  }
+
+  // ---------- money nudges (Freelancer / Artist) ----------
+  function moneyItems() {
+    var d = today(), out = [];
+    if (S.active === "freelancer") {
+      S.quotes.forEach(function (q) {
+        if (q.stage === 2) out.push({ kind: "inv", id: q.id, who: q.client, amount: q.amount, age: daysSince(q.invoicedAt), sort: q.invoicedAt || "0" });
+        else if (q.stage === 0 && daysSince(q.createdAt) >= 5) out.push({ kind: "quote", id: q.id, who: q.client, amount: q.amount, age: daysSince(q.createdAt), sort: q.createdAt });
+      });
+    } else if (S.active === "artist") {
+      S.gigs.forEach(function (g) {
+        if (!g.fullPaid && g.date < d && gigOwed(g) > 0) out.push({ kind: "bal", id: g.id, who: g.venue, amount: gigOwed(g), date: g.date, sort: g.date });
+        else if (g.date >= d && g.deposit > 0 && !g.depPaid && g.date <= addDays(d, 30)) out.push({ kind: "dep", id: g.id, who: g.venue, amount: g.deposit, date: g.date, sort: g.date });
+      });
+    }
+    return out.sort(function (a, b) { return String(a.sort).localeCompare(String(b.sort)); });
+  }
+  function moneyRow(m) {
+    var meta, bad, until = m.date ? -daysSince(m.date) : 0;
+    if (m.kind === "inv") { meta = m.age != null ? t("mr_inv_age", { n: m.age }) : t("mr_inv"); bad = m.age >= 14; }
+    else if (m.kind === "quote") { meta = t("mr_quote_age", { n: m.age }); bad = false; }
+    else if (m.kind === "dep") { meta = t("mr_dep", { date: dayLabel(m.date), n: until }); bad = until <= 7; }
+    else { meta = t("mr_bal", { date: dayLabel(m.date) }); bad = true; }
+    var doneAct = { inv: "paid-quote", quote: "advance", dep: "dep-paid", bal: "full-paid" }[m.kind];
+    var doneLabel = { inv: t("mr_got_paid"), quote: t("mr_accepted"), dep: t("mr_got_dep"), bal: t("mr_got_paid") }[m.kind];
+    return '<li class="item col-item"><div class="row between"><b>' + esc(m.who) + "</b><span>" + esc(money(m.amount)) + '</span></div><span class="small ' + (bad ? "bad-text" : "muted") + '">' + esc(meta) + "</span>" +
+      '<div class="row gap wrap"><button type="button" class="mini accent" data-act="nudge" data-k="' + m.kind + '" data-id="' + esc(m.id) + '">' + esc(t("mr_nudge")) + '</button><button type="button" class="mini" data-act="' + doneAct + '" data-id="' + esc(m.id) + '">✓ ' + esc(doneLabel) + "</button></div></li>";
+  }
+  function nudgeText(kind, id) {
+    if (kind === "inv" || kind === "quote") {
+      var q = findById(S.quotes, id); if (!q) return "";
+      return t(kind === "inv" ? "msg_invoice" : "msg_quote", { client: q.client, service: q.service || t("msg_work"), amount: money(q.amount) });
+    }
+    var g = findById(S.gigs, id); if (!g) return "";
+    return t(kind === "dep" ? "msg_deposit" : "msg_balance", { venue: g.venue, date: dayLabel(g.date), amount: money(kind === "dep" ? g.deposit : gigOwed(g)) });
+  }
+  function copyText(text, okMsg) {
+    var fallback = function () {
+      var ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); toast(okMsg); } catch (e) { toast(text.slice(0, 120)); }
+      ta.remove();
+    };
+    try { navigator.clipboard.writeText(text).then(function () { toast(okMsg); }, fallback); } catch (e) { fallback(); }
+  }
+  function shareText(text, okMsg) {
+    if (navigator.share && /Android|iPhone|iPad|Mobi/i.test(navigator.userAgent)) { navigator.share({ text: text }).catch(function () { /* cancelled */ }); return; }
+    copyText(text, okMsg);
+  }
+  function focusBlock() {
+    var d = today(), now = nowHM();
+    return S.events.filter(function (e) { return e.focus && (e.date > d || (e.date === d && (e.end || "23:59") > now)); })
+      .sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); })[0];
+  }
+  function addFocusBlock() {
+    var bs = bestSlot(); if (!bs) return;
+    var start = PEAK[bs.slot][0], date = nowHM() < start ? today() : addDays(today(), 1);
+    var top = S.tasks.filter(function (x) { return !x.done; }).sort(byDue)[0];
+    S.events.push({ id: uid(), title: t("focus_event", { task: top ? top.title : t("focus_generic") }), date: date, time: start, end: PEAK[bs.slot][1], mode: "office", focus: true });
+    save(); render(); toast(t("hl_focus_added", { when: (date === today() ? t("today_label") : dayLabel(date)) + " " + start })); track("focus_block");
+  }
+
+  // ---------- reminders ----------
+  var remindTimers = [];
+  function scheduleReminders() {
+    remindTimers.forEach(clearTimeout); remindTimers = [];
+    var R = S.reminders;
+    if (!S.onboarded || !R || !R.notify || !("Notification" in window) || Notification.permission !== "granted") return;
+    [["morning", R.morning], ["evening", R.evening]].forEach(function (x) {
+      var p = x[1].split(":"), at = new Date(); at.setHours(+p[0], +p[1], 0, 0);
+      var ms = at.getTime() - Date.now();
+      if (ms > 0) remindTimers.push(setTimeout(function () { fireReminder(x[0]); }, ms));
+    });
+  }
+  function fireReminder(kind) {
+    var d = today(), day = S.energy[d] || {};
+    if ((kind === "evening" && day.e) || (kind === "morning" && day.m)) return;
+    var title = t(kind === "morning" ? "rm_ev_morning" : "rm_ev_evening");
+    var opts = { body: t(kind === "morning" ? "rm_ev_morning_d" : "rm_ev_evening_d"), icon: "icons/icon-192.png", tag: "dahand-" + kind };
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        navigator.serviceWorker.getRegistration().then(function (r) { if (r && r.showNotification) r.showNotification(title, opts); else new Notification(title, opts); });
+      } else new Notification(title, opts);
+    } catch (e) { /* ignore */ }
+  }
+  function icsStamp(d) { return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + "T" + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + "Z"; }
+  function icsEsc(s) { return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n"); }
+  function remindersIcs() {
+    var R = S.reminders, url = location.origin + location.pathname, start = today().replace(/-/g, ""), now = icsStamp(new Date());
+    var ev = function (key, time, rule, title, desc) {
+      return ["BEGIN:VEVENT", "UID:dahand-" + key + "-" + S.deviceId + "@dahand.app", "DTSTAMP:" + now, "DTSTART:" + start + "T" + time.replace(":", "") + "00",
+        "DURATION:PT10M", "RRULE:" + rule, "SUMMARY:" + icsEsc(title), "DESCRIPTION:" + icsEsc(desc + "\n" + url), "URL:" + url, "TRANSP:TRANSPARENT",
+        "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(title), "TRIGGER:PT0M", "END:VALARM", "END:VEVENT"].join("\r\n");
+    };
+    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//DaHand//Reminders//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+      ev("morning", R.morning, "FREQ=DAILY", t("rm_ev_morning"), t("rm_ev_morning_d")),
+      ev("evening", R.evening, "FREQ=DAILY", t("rm_ev_evening"), t("rm_ev_evening_d")),
+      ev("weekly", "18:00", "FREQ=WEEKLY;BYDAY=SU", t("rm_ev_weekly"), t("rm_ev_weekly_d")),
+      "END:VCALENDAR"].join("\r\n") + "\r\n";
+  }
+  function download(name, text, type) {
+    var blob = new Blob([text], { type: type });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+
+  // ---------- calendar import (.ics from Google Calendar, Outlook, Apple) ----------
+  function icsDate(v) {
+    var m = String(v || "").match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/); if (!m) return null;
+    if (!m[4]) return { date: m[1] + "-" + m[2] + "-" + m[3], time: "" };
+    if (m[7]) { var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5])); return { date: iso(d), time: pad(d.getHours()) + ":" + pad(d.getMinutes()) }; }
+    return { date: m[1] + "-" + m[2] + "-" + m[3], time: m[4] + ":" + m[5] };
+  }
+  function parseICS(text) {
+    var lines = String(text).replace(/\r?\n[ \t]/g, "").split(/\r?\n/), list = [], cur = null;
+    lines.forEach(function (l) {
+      if (l === "BEGIN:VEVENT") { cur = {}; return; }
+      if (l === "END:VEVENT") { if (cur && cur.start && cur.title && !/CANCELLED/i.test(cur.status || "")) list.push(cur); cur = null; return; }
+      if (!cur) return;
+      var i = l.indexOf(":"); if (i < 0) return;
+      var key = l.slice(0, i).split(";")[0].toUpperCase(), val = l.slice(i + 1);
+      if (key === "SUMMARY") cur.title = val.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1").trim().slice(0, 80);
+      else if (key === "DTSTART") cur.start = icsDate(val);
+      else if (key === "RRULE") cur.rrule = val;
+      else if (key === "STATUS") cur.status = val;
+      else if (key === "EXDATE") val.split(",").forEach(function (x) { var dd = icsDate(x); if (dd) (cur.ex = cur.ex || {})[dd.date] = 1; });
+    });
+    var from = addDays(today(), -7), to = addDays(today(), 60), out = [];
+    var WD = { MO: 0, TU: 1, WE: 2, TH: 3, FR: 4, SA: 5, SU: 6 };
+    list.forEach(function (e) {
+      var s = e.start.date;
+      if (!e.rrule) { if (s >= from && s <= to) out.push({ title: e.title, date: s, time: e.start.time }); return; }
+      var r = {}; e.rrule.split(";").forEach(function (p) { var kv = p.split("="); r[(kv[0] || "").toUpperCase()] = kv[1] || ""; });
+      var iv = Math.max(1, +(r.INTERVAL || 1)), count = r.COUNT ? +r.COUNT : 0, until = r.UNTIL ? (icsDate(r.UNTIL) || {}).date : "";
+      var byday = r.BYDAY ? r.BYDAY.split(",").map(function (x) { return WD[x.replace(/[^A-Z]/g, "")]; }).filter(function (x) { return x != null; }) : null;
+      var sd = parseIso(s), startMon = parseIso(addDays(s, -weekdayIndex(s))), n = 0;
+      var d = (!count && s < from) ? from : s; // without COUNT we can skip straight to the window
+      for (var k = 0; k < 4000 && d <= to; k++, d = addDays(d, 1)) {
+        if (until && d > until) break;
+        var cd = parseIso(d), hit = false;
+        if (r.FREQ === "DAILY") hit = Math.round((cd - sd) / 864e5) % iv === 0;
+        else if (r.FREQ === "WEEKLY") hit = Math.floor(Math.round((cd - startMon) / 864e5) / 7) % iv === 0 && (byday ? byday.indexOf(weekdayIndex(d)) > -1 : weekdayIndex(d) === weekdayIndex(s));
+        else if (r.FREQ === "MONTHLY") hit = cd.getDate() === sd.getDate() && ((cd.getFullYear() - sd.getFullYear()) * 12 + cd.getMonth() - sd.getMonth()) % iv === 0;
+        else if (r.FREQ === "YEARLY") hit = cd.getDate() === sd.getDate() && cd.getMonth() === sd.getMonth();
+        else hit = d === s;
+        if (!hit || d < s) continue;
+        n++; if (count && n > count) break;
+        if (d >= from && !(e.ex && e.ex[d])) out.push({ title: e.title, date: d, time: e.start.time });
+      }
+    });
+    return out;
+  }
+  function importIcs(text) {
+    var have = {}; S.events.forEach(function (e) { have[e.title + "|" + e.date + "|" + (e.time || "")] = 1; });
+    var added = 0;
+    parseICS(text).forEach(function (e) {
+      var k = e.title + "|" + e.date + "|" + (e.time || "");
+      if (have[k] || added >= 400) return; have[k] = 1; added++;
+      S.events.push({ id: uid(), title: e.title, date: e.date, time: e.time, mode: "office", imported: true });
+    });
+    return added;
+  }
+
+  // ---------- energy model: body capacity (sleep, food, water) vs schedule demand + mood check-ins ----------
+  // Points per hour of activity. Order matters: the first match wins.
+  var EV_KIND = [
+    ["perform", 30, /\bgig\b|\bshow\b|concert|perform|live set|festival|gala|biểu diễn|đêm nhạc|\bdiễn\b/i],
+    ["exercise", 20, /\bgym\b|\brun\b|running|yoga|workout|swim|football|tennis|pilates|chạy bộ|\bbơi\b|thể dục|đá bóng|tập luyện|tập gym|rehears|vocal practice|luyện thanh|tập hát|tập nhạc/i],
+    ["focus", 15, /focus|deep work|tập trung|\bshoot\b|chụp|record|thu âm|editing|dựng phim/i],
+    ["meeting", 12, /meet|\bcall\b|stand-?up|1:1|review|interview|workshop|present|họp|\bgọi\b|phỏng vấn|thuyết trình|duyệt/i],
+    ["care", 12, /school|pick ?up|drop ?off|\bkids?\b|child|baby|đưa con|đón con|đưa đón|học thêm|phụ huynh/i],
+    ["travel", 10, /flight|travel|drive|commute|\btrain\b|chuyến bay|sân bay|di chuyển|lái xe/i],
+    ["social", 6, /brunch|lunch|dinner|party|coffee|drinks|birthday|ăn trưa|ăn tối|cà phê|tiệc|sinh nhật|grandma|bà ngoại|bà nội/i]
+  ];
+  var TASK_PTS = 6, LIVING_PTS = 30;
+  function evKind(title) { for (var i = 0; i < EV_KIND.length; i++) if (EV_KIND[i][2].test(title || "")) return EV_KIND[i]; return ["other", 10]; }
+  function toMin(hm) { var p = String(hm || "").split(":"); return p.length < 2 || p[0] === "" ? null : +p[0] * 60 + +p[1]; }
+  function fromMin(m) { m = ((m % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ":" + pad(m % 60); }
+  function evHours(e) { var a = toMin(e.time), b = toMin(e.end); return a != null && b != null && b > a ? (b - a) / 60 : 1; }
+  function signed(n) { return n > 0 ? "+" + n : n < 0 ? "−" + Math.abs(n) : "0"; }
+  function ateToday(d) { return ((S.checks || {})[d] || []).some(function (c) { return c.ate === 1; }); }
+  function kv(rows) {
+    return '<ul class="kv-list">' + rows.map(function (r) { return "<li><span>" + esc(r[0]) + "</span><b" + (r[2] ? ' class="' + r[2] + '"' : "") + ">" + esc(r[1]) + "</b></li>"; }).join("") + "</ul>";
+  }
+  function ulist(lines, cls) { return '<ul class="' + (cls || "dot-list") + '">' + lines.map(function (l) { return "<li>" + esc(l) + "</li>"; }).join("") + "</ul>"; }
+
+  function energyModel(d) {
+    d = d || today();
+    var isToday = d === today(), now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
+    // 1) Capacity: what the body brings today
+    var cap = [[t("em_base"), 100]], h = sleepHours(d), flags = {};
+    if (h == null) cap.push([t("em_sleep_unknown"), 0]);
+    else if (h < 7.5) { cap.push([t("em_sleep_short", { h: dec(h), miss: dec(Math.round((7.5 - h) * 10) / 10) }), -Math.round((7.5 - h) * 12)]); flags.shortSleep = h; }
+    else if (h > 9.5) cap.push([t("em_sleep_long", { h: dec(h) }), -5]);
+    else cap.push([t("em_sleep_ok", { h: dec(h) }), 0]);
+    var prev = []; for (var i = 1; i <= 3; i++) { var ph = sleepHours(addDays(d, -i)); if (ph) prev.push(ph); }
+    var pa = mean(prev); if (pa != null && pa < 7) cap.push([t("em_debt", { h: dec(pa) }), -Math.round((7 - pa) * 8)]);
+    if (isToday && now.getHours() >= 13 && !(S.meals[d] || []).length && !ateToday(d)) { cap.push([t("em_no_food"), -10]); flags.noFood = true; }
+    if (isToday && now.getHours() >= 15 && (S.water[d] || 0) < 3) { cap.push([t("em_low_water"), -5]); flags.lowWater = true; }
+    var capT = Math.max(30, Math.min(110, cap.reduce(function (a, x) { return a + x[1]; }, 0)));
+    // 2) Demand: what today's schedule asks for
+    var s = S.sleep[d], wake = toMin((s && s.wake) || (S.rhythm && S.rhythm.wake) || "07:00"), bed = toMin((S.rhythm && S.rhythm.bed) || "23:00");
+    if (bed <= wake) bed += 1440;
+    var frac = isToday ? Math.max(0, Math.min(1, (nowMin - wake) / (bed - wake))) : (d < today() ? 1 : 0);
+    var dem = [[t("em_living"), LIVING_PTS]], used = LIVING_PTS * frac, heavy = [];
+    S.events.filter(function (e) { return e.date === d; }).sort(byTime).forEach(function (e) {
+      var k = evKind(e.title), lr = learnRatio(k[0]), hrs = evHours(e) * (lr ? lr.r : 1), pts = Math.round(k[1] * hrs), st = toMin(e.time);
+      dem.push([(e.time ? e.time + " · " : "") + e.title + " (" + t("ek_" + k[0]) + ")", pts]);
+      if (d < today()) used += pts;
+      else if (isToday && st != null && nowMin >= st) used += pts * Math.min(1, (nowMin - st) / (hrs * 60));
+      if (k[1] >= 20 && st != null) heavy.push({ title: e.title, time: e.time, min: st });
+    });
+    S.gigs.filter(function (g) { return g.date === d; }).forEach(function (g) {
+      if (S.events.some(function (e) { return e.date === d && e.title.toLowerCase().indexOf(String(g.venue).toLowerCase()) > -1; })) return;
+      dem.push([t("em_gig", { venue: g.venue }) + " (" + t("ek_perform") + ")", 30]);
+    });
+    var dueN = S.tasks.filter(function (x) { return !x.done && x.due && x.due <= d; }).length;
+    var doneN = S.tasks.filter(function (x) { return x.done && x.doneAt === d; }).length;
+    var taskN = Math.min(6, dueN + doneN);
+    if (taskN) { dem.push([t("em_tasks", { n: taskN }), taskN * TASK_PTS]); used += Math.min(taskN, doneN) * TASK_PTS; }
+    var demT = dem.reduce(function (a, x) { return a + x[1]; }, 0), bal = capT - demT;
+    var status = bal >= 15 ? "ok" : bal >= -10 ? "fit" : "over";
+    var left = Math.max(0, Math.min(100, Math.round((capT - used) / capT * 100)));
+    // 3) Feeling: the latest check-in (within 4 hours) is blended in
+    var checks = (S.checks || {})[d] || [], last = checks[checks.length - 1];
+    var recent = !!(last && isToday && nowMin - toMin(last.t) <= 240 && nowMin >= toMin(last.t));
+    var nowPct = recent ? Math.round(left * 0.6 + (last.body - 1) / 4 * 100 * 0.4) : left;
+    return { cap: cap, capT: capT, dem: dem, demT: demT, bal: bal, status: status, left: left, nowPct: nowPct, last: last, recent: recent,
+      checks: checks, flags: flags, heavy: heavy.filter(function (x) { return x.min > nowMin && x.min - nowMin <= 240; }), bed: fromMin(bed) };
+  }
+  function energyTips(m) {
+    var out = [], d = today(), hr = new Date().getHours();
+    if (m.status === "over") {
+      var mv = S.tasks.filter(function (x) { return !x.done && x.due === d; }).slice(-1)[0];
+      out.push(mv ? { text: t("tip_defer", { task: mv.title, n: Math.min(Math.abs(m.bal), TASK_PTS) }), act: "defer-task", id: mv.id, btn: t("tip_defer_btn") } : { text: t("tip_over") });
+    }
+    if (m.heavy[0]) out.push({ text: t("tip_before", { title: m.heavy[0].title, time: m.heavy[0].time }) });
+    if (m.flags.shortSleep && hr < 15) out.push({ text: t("tip_nap") });
+    if (m.flags.shortSleep && hr >= 15) out.push({ text: t("tip_bed", { time: fromMin(toMin(m.bed) - 30) }) });
+    if (m.flags.noFood) out.push({ text: t("tip_eat") });
+    if (m.flags.lowWater) out.push({ text: t("tip_water") });
+    if (m.last && m.last.stress === 3) out.push({ text: t("tip_stress") });
+    if (!out.length) out.push({ text: t(m.status === "ok" ? "tip_ok" : "tip_fit") });
+    return out;
+  }
+  function tipsHtml(list) {
+    return '<ul class="tip-list">' + list.map(function (x) {
+      return "<li><span>" + esc(x.text) + "</span>" + (x.act ? '<button type="button" class="mini accent" data-act="' + x.act + '" data-id="' + esc(x.id) + '">' + esc(x.btn) + "</button>" : "") + "</li>";
+    }).join("") + "</ul>";
+  }
+  function batteryHtml(m) {
+    var pct = m.nowPct, cls = pct >= 60 ? "hi" : pct >= 30 ? "mid" : "lo";
+    return '<div class="battery ' + cls + '"><div class="bat-top"><b>' + pct + '%</b><span class="pill ' + { ok: "ok", fit: "mid", over: "bad" }[m.status] + '">' + esc(t("em_status_" + m.status)) + "</span></div>" +
+      '<div class="bat-track" role="img" aria-label="' + pct + '%"><span style="width:' + pct + '%"></span></div><p class="note">' + esc(t(m.recent ? "em_now_blend" : "em_now_plan")) + "</p></div>";
+  }
+  function lastCheckText(c) { return c ? t("ci_line", { t: c.t, body: t("lv" + c.body), mood: t("md" + c.mood), stress: t("st" + c.stress) }) : t("em_no_check"); }
+  function energyCard() {
+    var m = energyModel();
+    return '<section class="card" id="energy-card"><h2 class="card-h">' + icon("bolt", 16) + esc(t("em_title")) + "</h2>" + batteryHtml(m) +
+      kv([[t("em_cap"), String(m.capT)], [t("em_dem"), String(m.demT)], [t("em_bal"), signed(m.bal), m.status === "over" ? "bad-text" : m.status === "ok" ? "ok-text" : ""], [t("em_left_plan"), m.left + "%"], [t("em_last"), lastCheckText(m.last)]]) +
+      '<div class="row gap wrap"><button type="button" class="btn" data-act="checkin">' + esc(t("ci_open")) + '</button><button type="button" class="link-btn" data-act="tab" data-v="routine">' + esc(t("em_how")) + " →</button></div>" +
+      '<h3 class="sub-h">' + esc(t("tips_title")) + "</h3>" + tipsHtml(energyTips(m).slice(0, 2)) + "</section>";
+  }
+  function checkStep(slot) {
+    var d = today(), list = ((S.checks || {})[d] || []).filter(function (c) { return slotOfTime(c.t) === slot; }), c = list[list.length - 1];
+    return c ? '<p class="done-line">' + icon("check", 14) + esc(lastCheckText(c)) + "</p>" :
+      '<button type="button" class="btn" data-act="checkin">' + esc(t("ci_step")) + "</button>";
+  }
+  function checkinForm(after) {
+    var d = today(), hr = new Date().getHours(), m = energyModel();
+    var radios = function (name, opts, req) {
+      return '<div class="opt-row" role="radiogroup">' + opts.map(function (o) { return '<label class="opt-radio"><input type="radio" name="' + name + '" value="' + o[0] + '"' + (req ? " required" : "") + "><span>" + esc(o[1]) + "</span></label>"; }).join("") + "</div>";
+    };
+    var q = function (text) { return '<p class="q">' + esc(text) + "</p>"; };
+    var head = "";
+    if (after) {
+      var diff = after.actual - after.planned, lr = learnRatio(after.cat);
+      head = kv([[t("ci_after_done"), after.title], [t("ci_after_plan"), fmtDur(after.planned)], [t("ci_after_real"), fmtDur(after.actual) + " (" + (diff >= 0 ? "+" : "−") + fmtDur(Math.abs(diff)) + ")", diff > 5 ? "bad-text" : diff < -5 ? "ok-text" : ""]]) +
+        (lr ? ulist([t("ci_after_learn", { kind: t("ek_" + after.cat), pct: Math.round(Math.abs(lr.r - 1) * 100), dir: t(lr.r >= 1 ? "ci_longer" : "ci_shorter"), n: lr.n })]) : "");
+    }
+    var html = '<form class="form" data-form="checkin">' + head + '<p class="note">' + esc(t(after ? "ci_intro_after" : "ci_intro")) + "</p>" +
+      q(t("ci_body")) + radios("body", [1, 2, 3, 4, 5].map(function (v) { return [v, v + " · " + t("lv" + v)]; }), true) +
+      q(t("ci_mood")) + radios("mood", [1, 2, 3, 4, 5].map(function (v) { return [v, t("md" + v)]; }), true) +
+      q(t("ci_stress")) + radios("stress", [[1, t("st1")], [2, t("st2")], [3, t("st3")]], true);
+    if (after) {
+      html += q(t("ci_fuel")) + radios("fuel", [[2, t("fuel2")], [1, t("fuel1")], [0, t("fuel0")]], true) +
+        q(t("ci_rest")) + radios("rest", [[0, t("rest0")], [5, t("rest_n", { n: 5 })], [15, t("rest_n", { n: 15 })], [30, t("rest_n", { n: 30 })]], true);
+    } else {
+      if (hr >= 11 && !(S.meals[d] || []).length && !ateToday(d)) html += q(t("ci_ate")) + radios("ate", [[1, t("ci_yes")], [0, t("ci_notyet")]]);
+      if (hr >= 10 && (S.water[d] || 0) < 6) html += q(t("ci_water")) + radios("water", [[1, "0–2"], [4, "3–5"], [6, "6+"]]);
+    }
+    if (m.heavy[0]) html += q(t("ci_ready", { title: m.heavy[0].title, time: m.heavy[0].time })) + radios("ready", [[1, t("rd1")], [2, t("rd2")], [3, t("rd3")]]);
+    return html + '<label class="field"><span>' + esc(t("ci_note")) + '</span><input name="note" maxlength="120" placeholder="' + esc(t("ci_note_ph")) + '"></label>' +
+      '<button type="submit" class="btn full">' + esc(t("ci_save")) + '</button><p class="note">' + esc(t("ci_privacy")) + "</p></form>";
+  }
+  function checkinResult(c) {
+    var m = energyModel(), L = [], rows = [[t("ci_body_s"), c.body + "/5 · " + t("lv" + c.body)], [t("ci_mood_s"), t("md" + c.mood)], [t("ci_stress_s"), t("st" + c.stress)]];
+    if (c.ate != null) rows.push([t("ci_ate_s"), t(c.ate ? "ci_yes" : "ci_notyet")]);
+    if (c.water != null) rows.push([t("ci_water_s"), { 1: "0–2", 4: "3–5", 6: "6+" }[c.water] + " " + t("ci_glasses")]);
+    if (c.ready != null) rows.push([t("ci_ready_s"), t("rd" + c.ready)]);
+    if (c.fuel != null) rows.push([t("ci_fuel_s"), t("fuel" + c.fuel)]);
+    if (c.rest != null) rows.push([t("ci_rest_s"), c.rest ? t("ci_rest_until", { n: c.rest, time: fromMin(toMin(c.t) + c.rest) }) : t("rest0")]);
+    if (c.after) rows.unshift([t("ci_after_done"), c.after]);
+    if (c.note) rows.push([t("ci_note_s"), c.note]);
+    if (c.body <= 2 && m.left >= 50) {
+      var why = [];
+      if (c.stress === 3) why.push(t("why_stress"));
+      if (m.flags.shortSleep) why.push(t("why_sleep"));
+      if (c.ate === 0 || m.flags.noFood) why.push(t("why_food"));
+      if (c.water === 1 || m.flags.lowWater) why.push(t("why_water"));
+      L.push(t("an_tired", { pct: m.left }) + (why.length ? " " + t("an_maybe", { r: why.join(", ") }) : ""));
+    } else if (c.body >= 4 && m.left < 40) L.push(t("an_better", { pct: m.left }));
+    else L.push(t("an_match", { pct: m.left }));
+    L.push(t("an_bal_" + m.status, { cap: m.capT, dem: m.demT, n: Math.abs(m.bal) }));
+    if (c.stress === 3 && m.status === "over") L.push(t("an_stress_real"));
+    if (c.mood <= 2) L.push(t("an_mood_low"));
+    if (c.ready === 3) L.push(t("an_not_ready"));
+    if (c.fuel === 0) L.push(t("an_fuel0"));
+    if (c.rest === 0 && c.body <= 2) L.push(t("an_no_rest"));
+    return '<p class="note">' + esc(t("ci_saved_at", { t: c.t })) + "</p>" + kv(rows) +
+      '<h3 class="sub-h">' + esc(t("an_title")) + "</h3>" + ulist(L) +
+      '<h3 class="sub-h">' + esc(t("tips_title")) + "</h3>" + tipsHtml(energyTips(m)) +
+      '<button type="button" class="btn full" data-act="close-modal">' + esc(t("ci_done")) + "</button>";
+  }
+  function syncSlotFromChecks(d, slot) {
+    var list = ((S.checks || {})[d] || []).filter(function (c) { return slotOfTime(c.t) === slot; }), day = S.energy[d] = S.energy[d] || {};
+    if (list.length) day[slot] = list[list.length - 1].body; else delete day[slot];
+  }
+
+  // ---------- live assistant: timeline, gaps, live tracking, learning from real durations ----------
+  var TASK_DEFAULT_MIN = 30;
+  var sheetTimings = [];
+  function nowMinutes() { var n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+  function fmtDur(min) {
+    min = Math.max(0, Math.round(min)); var h = Math.floor(min / 60), m = min % 60;
+    return h ? (m ? t("dur_hm", { h: h, m: m }) : t("dur_h", { h: h })) : t("dur_m", { m: m });
+  }
+  function catOf(kind, item) { return kind === "task" ? "task" : evKind(item.title)[0]; }
+  function plannedOf(kind, item) {
+    if (kind === "task") return +item.est || TASK_DEFAULT_MIN;
+    var a = toMin(item.time), b = toMin(item.end); return a != null && b != null && b > a ? b - a : 60;
+  }
+  // Average of actual / planned for one category (needs 2+ real measurements).
+  function learnRatio(cat) {
+    var L = (S.logs || []).filter(function (x) { return x.cat === cat && x.planned > 0 && x.actual > 0; }).slice(-20);
+    if (L.length < 2) return null;
+    var r = L.reduce(function (a, x) { return a + Math.min(4, Math.max(0.25, x.actual / x.planned)); }, 0) / L.length;
+    return { r: Math.round(r * 100) / 100, n: L.length };
+  }
+  function predictMin(kind, item) { var p = plannedOf(kind, item), lr = learnRatio(catOf(kind, item)); return lr ? Math.round(p * lr.r) : p; }
+  function loggedDone(ref, d) { return (S.logs || []).some(function (x) { return x.ref === ref && x.date === d; }); }
+
+  function timeline(d) {
+    var nowM = nowMinutes(), isToday = d === today();
+    return S.events.filter(function (e) { return e.date === d && e.time; }).sort(byTime).map(function (e) {
+      var st = toMin(e.time), plan = plannedOf("event", e), pred = predictMin("event", e), tr = +e.travel || 0;
+      var running = S.run && S.run.ref === e.id, done = loggedDone(e.id, d) || e.doneAt === d;
+      var status = done ? "done" : running ? "now" : !isToday ? "later" : nowM >= st + pred ? "past" : nowM >= st ? "now" : "later";
+      return { e: e, start: st, end: st + plan, predEnd: st + pred, leave: st - tr, travel: tr, status: status, cat: evKind(e.title)[0] };
+    });
+  }
+  // Free windows between now (or wake-up) and bedtime, around events + travel.
+  function freeGaps(d, tl) {
+    var s = S.sleep[d], wake = toMin((s && s.wake) || (S.rhythm && S.rhythm.wake) || "07:00"), bed = toMin((S.rhythm && S.rhythm.bed) || "23:00");
+    if (bed <= wake) bed += 1440;
+    var from = Math.max(wake, d === today() ? nowMinutes() : wake), busy = [], meals = (S.meals[d] || []).length;
+    tl.forEach(function (x) { if (x.status !== "done") busy.push([x.leave, Math.max(x.end, x.predEnd), "busy"]); });
+    if (S.run && S.run.date === d) { var st = toMin(S.run.startHM); busy.push([st, st + S.run.pred, "busy"]); }
+    if (S.restUntil && S.restUntil > Date.now()) { var r = new Date(S.restUntil); busy.push([from, r.getHours() * 60 + r.getMinutes(), "busy"]); }
+    // Planned blocks that free time should respect: meals (if not eaten yet) and winding down before bed.
+    var fixed = [];
+    if (meals < 2 && !ateToday(d)) fixed.push([toMin("12:00"), toMin("12:45"), "lunch"]);
+    if (meals < 3) fixed.push([toMin("18:30"), toMin("19:15"), "dinner"]);
+    fixed.push([bed - 30, bed, "wind"]);
+    busy.sort(function (a, b) { return a[0] - b[0]; });
+    var raw = [], cur = from;
+    busy.forEach(function (b) { if (b[0] - cur >= 15) raw.push([cur, b[0]]); cur = Math.max(cur, b[1]); });
+    if (bed - cur >= 15) raw.push([cur, bed]);
+    var out = [];
+    raw.forEach(function (g) {
+      var pieces = [[g[0], g[1], "free"]];
+      fixed.forEach(function (f) {
+        var next = [];
+        pieces.forEach(function (p) {
+          if (p[2] !== "free" || f[1] <= p[0] || f[0] >= p[1]) { next.push(p); return; }
+          if (f[0] - p[0] >= 15) next.push([p[0], f[0], "free"]);
+          next.push([Math.max(p[0], f[0]), Math.min(p[1], f[1]), f[2]]);
+          if (p[1] - f[1] >= 15) next.push([f[1], p[1], "free"]);
+        });
+        pieces = next;
+      });
+      pieces.forEach(function (p) {
+        if (p[2] !== "free" || p[1] - p[0] <= 150) { out.push(p); return; }
+        for (var x = p[0]; x < p[1]; x += 120) out.push([x, Math.min(p[1], x + 120), "free"]); // long stretches → 2-hour blocks
+      });
+    });
+    return out.filter(function (p) { return p[1] - p[0] >= 10; });
+  }
+  function gapIdea(g, used) {
+    var len = g[1] - g[0];
+    if (g[2] === "lunch") return t("gap_lunch");
+    if (g[2] === "dinner") return t("gap_dinner");
+    if (g[2] === "wind") return t("gap_wind");
+    if (len < 30) return t("gap_break");
+    var fit = S.tasks.filter(function (x) { return !x.done && !used[x.id] && predictMin("task", x) <= len - 10; }).sort(byDue)[0];
+    if (fit) { used[fit.id] = 1; return t("gap_task", { task: fit.title, n: fmtDur(predictMin("task", fit)) }); }
+    return len >= 90 ? t("gap_free") : t("gap_rest");
+  }
+  function runButtons(kind, id, small) {
+    var running = S.run && S.run.ref === id;
+    return running ? '<button type="button" class="mini accent" data-act="run-stop">' + icon("check", 12) + esc(t("run_done")) + "</button>"
+      : '<button type="button" class="mini" data-act="run-start" data-kind="' + kind + '" data-id="' + esc(id) + '">' + icon("play", 12) + esc(small ? "" : t("run_start")) + "</button>";
+  }
+  function assistantCard(extra) {
+    var d = today(), nowM = nowMinutes(), tl = timeline(d), name = S.name || t("friend");
+    var items = [];
+    items.push("<li>" + esc(t("as_hello", { name: name, time: nowHM(), date: dayLabel(d) })) + "</li>");
+    // schedule
+    var sched = tl.length ? '<ul class="tl-list">' + tl.map(function (x) {
+      var lr = learnRatio(x.cat), predTxt = lr && Math.abs(x.predEnd - x.end) >= 5 ? " · " + t("as_pred", { time: fromMin(x.predEnd) }) : "";
+      var chip = { done: t("st_done"), past: t("st_past"), now: t("st_now"), later: "" }[x.status];
+      var act = x.status === "now" || (x.status === "later" && x.start - nowM <= 120) ? runButtons("event", x.e.id) : "";
+      return '<li class="tl ' + x.status + '"><div><b>' + esc(fromMin(x.start) + "–" + fromMin(x.end)) + "</b> · " + esc(x.e.title) +
+        (chip ? ' <span class="pill ' + (x.status === "now" ? "ok" : "") + '">' + esc(chip) + "</span>" : "") +
+        (x.travel ? '<span class="muted small">' + esc(t("as_leave", { time: fromMin(x.leave), n: x.travel })) + "</span>" : "") +
+        (predTxt ? '<span class="muted small">' + esc(predTxt.slice(3)) + "</span>" : "") + "</div>" + act + "</li>";
+    }).join("") + "</ul>" : "";
+    items.push("<li>" + esc(tl.length ? t("as_sched", { n: tl.length }) : t("as_sched_none")) + sched + "</li>");
+    // now / next
+    var cur = tl.filter(function (x) { return x.status === "now"; })[0], next = tl.filter(function (x) { return x.status === "later"; })[0];
+    if (S.restUntil && S.restUntil > Date.now()) items.push("<li>" + esc(t("as_resting", { time: new Date(S.restUntil).toTimeString().slice(0, 5) })) + "</li>");
+    if (cur) items.push("<li>" + esc(t("as_now", { title: cur.e.title, left: fmtDur(cur.predEnd - nowM), end: fromMin(cur.predEnd) })) + "</li>");
+    if (next) {
+      var txt = next.travel ? t("as_next_travel", { title: next.e.title, time: fromMin(next.start), leave: fromMin(next.leave), left: fmtDur(next.leave - nowM) })
+        : t("as_next", { title: next.e.title, time: fromMin(next.start), left: fmtDur(next.start - nowM) });
+      items.push('<li class="strong">' + esc(txt) + "</li>");
+    } else if (tl.length) items.push("<li>" + esc(t("as_no_more")) + "</li>");
+    // free time
+    var gaps = freeGaps(d, tl), used = {}, total = gaps.reduce(function (a, g) { return a + (g[2] === "free" ? g[1] - g[0] : 0); }, 0);
+    if (gaps.length) items.push("<li>" + esc(t("as_free", { total: fmtDur(total) })) + '<ul class="tl-list">' + gaps.slice(0, 7).map(function (g) {
+      return '<li class="tl gap' + (g[2] !== "free" ? " fixed" : "") + '"><div><b>' + esc(fromMin(g[0]) + "–" + fromMin(g[1])) + "</b> · " + esc(fmtDur(g[1] - g[0])) + '<span class="muted small">' + esc(gapIdea(g, used)) + "</span></div></li>";
+    }).join("") + "</ul></li>");
+    (extra || []).forEach(function (l) { items.push("<li>" + esc(l) + "</li>"); });
+    return '<section class="card assistant"><h2 class="card-h">' + icon("spark", 16) + esc(t("as_title")) + '</h2><ul class="dot-list">' + items.join("") + "</ul></section>";
+  }
+  function runBar() {
+    if (!S.run) return "";
+    var r = S.run;
+    return '<div class="run-bar"><div class="grow"><span class="small">' + esc(t("run_doing")) + "</span><b>" + esc(r.title) + '</b><span class="small"><span id="run-timer">' + esc(runElapsed()) + "</span> · " + esc(t("run_plan", { n: fmtDur(r.pred) })) + "</span></div>" +
+      '<button type="button" class="btn" data-act="run-stop">' + esc(t("run_done")) + '</button><button type="button" class="icon-btn" data-act="run-cancel" aria-label="' + esc(t("cancel")) + '">' + icon("x", 16) + "</button></div>";
+  }
+  function runElapsed() { if (!S.run) return ""; var s = Math.max(0, Math.floor((Date.now() - S.run.start) / 1000)); return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60); }
+  function startRun(kind, id) {
+    if (S.run) { toast(t("run_busy", { title: S.run.title })); return; }
+    var item = kind === "task" ? findById(S.tasks, id) : findById(S.events, id); if (!item) return;
+    S.run = { ref: id, kind: kind, title: item.title, cat: catOf(kind, item), planned: plannedOf(kind, item), pred: predictMin(kind, item), start: Date.now(), startHM: nowHM(), date: today() };
+    save(); render(); toast(t("run_started", { title: item.title })); track("run_start_" + kind);
+  }
+  function stopRun() {
+    var r = S.run; if (!r) return;
+    var actual = Math.max(1, Math.round((Date.now() - r.start) / 60000));
+    var log = { ref: r.ref, kind: r.kind, title: r.title, cat: r.cat, planned: r.planned, actual: actual, date: r.date, start: r.startHM, end: nowHM() };
+    S.logs = (S.logs || []).concat([log]).slice(-300);
+    if (r.kind === "task") { var tk = findById(S.tasks, r.ref); if (tk) { tk.done = true; tk.doneAt = today(); } }
+    else { var ev = findById(S.events, r.ref); if (ev) ev.doneAt = today(); }
+    S.run = null;
+    if (CFG.SHEET_ENDPOINT) sheetTimings.push({ t: Date.now(), title: log.title, cat: log.cat, planned: log.planned, actual: log.actual, date: log.date, start: log.start, end: log.end });
+    track("run_done_" + r.kind); save();
+    UI.modal = { kind: "checkin", after: log }; UI.modalJustOpened = true; render();
+  }
+  function timeCard() {
+    var cats = {}; (S.logs || []).forEach(function (x) { (cats[x.cat] = cats[x.cat] || []).push(x); });
+    var keys = Object.keys(cats);
+    var rows = keys.map(function (k) {
+      var L = cats[k].slice(-20), p = mean(L.map(function (x) { return x.planned; })), a = mean(L.map(function (x) { return x.actual; })), lr = learnRatio(k);
+      var pct = lr ? Math.round((lr.r - 1) * 100) : 0;
+      return [t("ek_" + k) + " (" + t("tc_times", { n: L.length }) + ")", t("tc_row", { p: fmtDur(p), a: fmtDur(a) }) + (lr ? " · " + (pct >= 0 ? "+" : "−") + Math.abs(pct) + "%" : ""), pct > 10 ? "bad-text" : pct < -10 ? "ok-text" : ""];
+    });
+    var recent = (S.logs || []).slice(-5).reverse().map(function (x) {
+      var diff = x.actual - x.planned;
+      return x.date.slice(5) + " " + x.start + "–" + x.end + " · " + x.title + " · " + t("tc_recent", { p: fmtDur(x.planned), a: fmtDur(x.actual), d: (diff >= 0 ? "+" : "−") + fmtDur(Math.abs(diff)) });
+    });
+    return '<section class="card"><h2 class="card-h">' + icon("clock", 16) + esc(t("tc_title")) + '</h2><p class="note">' + esc(t("tc_note")) + "</p>" +
+      (rows.length ? kv(rows) + '<h3 class="sub-h">' + esc(t("tc_recent_h")) + "</h3>" + ulist(recent) : '<p class="muted">' + esc(t("tc_empty")) + "</p>") + "</section>";
+  }
+  setInterval(function () {
+    var el = document.getElementById("run-timer"); if (el) el.textContent = runElapsed();
+  }, 1000);
+  setInterval(function () {
+    var a = document.activeElement;
+    if (!S.onboarded || UI.modal || UI.tab !== "today" || (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName))) return;
+    render(); // keep "time left" and free gaps current
+  }, 60000);
+
   // ---------- icons ----------
   var ICON = {
     sun: '<path d="M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M5.6 18.4l-1.4 1.4M19.8 4.2l-1.4 1.4"/><circle cx="12" cy="12" r="4"/>',
@@ -184,6 +883,12 @@
     x: '<path d="M6 6l12 12M18 6 6 18"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    play: '<path d="M7 4v16l13-8z"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+    flame: '<path d="M12 22c4 0 7-3 7-7 0-3-2-5.5-3.5-7-.3 2-1.5 3-2.5 3 0-3-1-6-4-9 0 4-5 6.5-5 13 0 4 3 7 8 7z"/>',
+    moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'
   };
   function icon(name, size) { return '<svg class="ic" width="' + (size || 20) + '" height="' + (size || 20) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[name] + "</svg>"; }
@@ -195,12 +900,17 @@
     document.documentElement.lang = S.lang;
     var accent = DATA.modes[S.active] ? DATA.modes[S.active].accent : "#2F5BEA";
     var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    var rs = document.documentElement.style;
-    rs.setProperty("--accent", accent);
-    rs.setProperty("--accent-2", mix(accent, "#A855F7", 0.35));
-    rs.setProperty("--accent-dark", mix(accent, "#000000", 0.18));
-    rs.setProperty("--accent-soft", rgba(accent, dark ? 0.28 : 0.14));
-    var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute("content", accent);
+    // Only touch theme colours when they really change (re-setting them every render repaints the whole background = flicker).
+    var themeKey = accent + (dark ? "d" : "l");
+    if (UI.themeKey !== themeKey) {
+      UI.themeKey = themeKey;
+      var rs = document.documentElement.style;
+      rs.setProperty("--accent", accent);
+      rs.setProperty("--accent-2", mix(accent, "#A855F7", 0.35));
+      rs.setProperty("--accent-dark", mix(accent, "#000000", 0.18));
+      rs.setProperty("--accent-soft", rgba(accent, dark ? 0.28 : 0.14));
+      var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute("content", accent);
+    }
     app.innerHTML = (S.onboarded ? shell() : onboarding()) + modal();
     UI.enter = false;
     restoreDrafts();
@@ -213,7 +923,9 @@
       var key = el.form.getAttribute("data-form") + "." + el.name;
       el.setAttribute("data-key", key);
       if (UI.drafts[key] == null) return;
-      if (el.type === "checkbox") el.checked = !!UI.drafts[key]; else el.value = UI.drafts[key];
+      if (el.type === "checkbox") el.checked = !!UI.drafts[key];
+      else if (el.type === "radio") el.checked = el.value === String(UI.drafts[key]);
+      else el.value = UI.drafts[key];
     });
   }
   function clearDrafts(form) { Object.keys(UI.drafts).forEach(function (k) { if (k.indexOf(form + ".") === 0) delete UI.drafts[k]; }); }
@@ -233,7 +945,7 @@
       '<header class="top"><div class="brand"><span class="logo">' + icon("spark", 18) + '</span><span class="brand-name">DaHand</span></div>' +
       '<div class="top-right"><button type="button" class="credit-badge" data-act="credits" aria-label="' + esc(t("credits_title") + ": " + S.credits) + '">' + icon("spark", 14) + "<b>" + S.credits + '</b><span class="credit-word">' + esc(t("credits")) + "</span>" + (claimed ? "" : '<span class="dot" aria-hidden="true"></span>') + "</button>" +
       '<button type="button" class="lang-btn" data-act="lang" aria-label="' + esc(t("m_language")) + '">' + icon("globe", 16) + "<span>" + (S.lang === "vi" ? "EN" : "VI") + "</span></button></div></header>" +
-      chips + '<nav class="nav" aria-label="Main">' + nav + "</nav>" +
+      chips + runBar() + '<nav class="nav" aria-label="Main">' + nav + "</nav>" +
       '<main class="main' + (UI.enter ? " enter" : "") + '" id="main">' + screen + "</main></div>" +
       '<div id="toast" class="toast" role="status" aria-live="polite"></div>';
   }
@@ -248,7 +960,20 @@
       body = '<h1 class="ob-h">' + esc(t("ob_welcome")) + '</h1><p class="ob-p">' + esc(t("ob_intro")) + "</p>" +
         '<label class="field"><span>' + esc(t("ob_name")) + '</span><input id="ob-name" type="text" maxlength="40" autocomplete="given-name" placeholder="' + esc(t("ob_name_ph")) + '" value="' + esc(S.name) + '"></label>' +
         '<div class="row gap ob-actions"><button type="button" class="btn ghost" data-act="lang">' + icon("globe", 16) + esc(t("lang_switch")) + '</button><button type="button" class="btn" data-act="ob-next">' + esc(t("next")) + "</button></div>" +
-        '<button type="button" class="link-btn" data-act="ob-demo">' + esc(t("ob_demo")) + "</button>";
+        '<button type="button" class="link-btn" data-act="ob-demo">' + esc(t("ob_demo")) + "</button>" +
+        (CFG.SHEET_ENDPOINT ? '<p class="note center-text">' + esc(t("consent_note")) + "</p>" : "");
+    } else if (step === 2) {
+      var R = UI.obR;
+      var chipRow = function (k, opts) {
+        return '<div class="opt-row" role="group">' + opts.map(function (o) { var on = R[k] === o[0]; return '<button type="button" class="opt' + (on ? " on" : "") + '" data-act="ob-r" data-k="' + k + '" data-v="' + o[0] + '" aria-pressed="' + on + '">' + esc(o[1]) + "</button>"; }).join("") + "</div>";
+      };
+      var times = function (arr) { return arr.map(function (x) { return [x, x]; }); };
+      body = '<h1 class="ob-h">' + esc(t("ob_r_title")) + '</h1><p class="ob-p">' + esc(t("ob_r_note")) + "</p>" +
+        '<p class="q">' + esc(t("ob_r_bed")) + "</p>" + chipRow("bed", times(["22:00", "23:00", "00:00", "01:00"])) +
+        '<p class="q">' + esc(t("ob_r_wake")) + "</p>" + chipRow("wake", times(["06:00", "07:00", "08:00", "09:00"])) +
+        '<p class="q">' + esc(t("ob_r_peak")) + "</p>" + chipRow("peak", [["m", t("slot_m")], ["a", t("slot_a")], ["e", t("slot_e")]]) +
+        '<div class="row gap ob-actions"><button type="button" class="btn ghost" data-act="ob-back">' + esc(t("back")) + '</button><button type="button" class="btn" data-act="ob-finish"' + (R.peak ? "" : " disabled") + ">" + esc(t("ob_start")) + "</button></div>" +
+        '<button type="button" class="link-btn" data-act="ob-skip">' + esc(t("ob_r_skip")) + "</button>";
     } else {
       body = '<h1 class="ob-h">' + esc(t("ob_modes_title")) + '</h1><p class="ob-p">' + esc(t("ob_modes_note")) + "</p>" +
         DATA.modeOrder.map(function (m) {
@@ -256,9 +981,9 @@
           return '<button type="button" class="mode-card pick' + (on ? " on" : "") + '" data-act="ob-mode" data-v="' + m + '" aria-pressed="' + on + '"' + (m === "office" ? " disabled" : "") + ' style="--c:' + DATA.modes[m].accent + '">' + icon(DATA.modes[m].icon, 22) +
             "<div><b>" + esc(t("mode_" + m)) + "</b>" + (m === "office" ? ' <span class="muted small">· ' + esc(t("ob_always_on")) + "</span>" : "") + "<p>" + esc(t("mode_" + m + "_desc")) + '</p></div><span class="tick">' + (on ? icon("check", 16) : "") + "</span></button>";
         }).join("") +
-        '<div class="row gap ob-actions"><button type="button" class="btn ghost" data-act="ob-back">' + esc(t("back")) + '</button><button type="button" class="btn" data-act="ob-finish">' + esc(t("ob_start")) + "</button></div>";
+        '<div class="row gap ob-actions"><button type="button" class="btn ghost" data-act="ob-back">' + esc(t("back")) + '</button><button type="button" class="btn" data-act="ob-rhythm">' + esc(t("next")) + "</button></div>";
     }
-    return '<div class="ob"><div class="ob-card"><div class="brand big"><span class="logo">' + icon("spark", 22) + '</span><span class="brand-name">DaHand</span></div><p class="tagline">' + esc(t("tagline")) + '</p><div class="steps" aria-hidden="true">' + [0, 1].map(function (i) { return '<span class="' + (i <= dots ? "on" : "") + '"></span>'; }).join("") + "</div>" + body + "</div></div>";
+    return '<div class="ob"><div class="ob-card"><div class="brand big"><span class="logo">' + icon("spark", 22) + '</span><span class="brand-name">DaHand</span></div><p class="tagline">' + esc(t("tagline")) + '</p><div class="steps" aria-hidden="true">' + [0, 1, 2].map(function (i) { return '<span class="' + (i <= dots ? "on" : "") + '"></span>'; }).join("") + "</div>" + body + "</div></div>";
   }
   function sampleCards() {
     var SAM = window.DAHAND_SAMPLES; if (!SAM) return "";
@@ -271,7 +996,9 @@
   function loadSample(pid) {
     var built = window.DAHAND_SAMPLES.build(pid, S.lang, today());
     if (!built) return;
-    S = migrate(Object.assign(fresh(), built, { currency: built.currency || "USD", tips: { welcome: false } })); save();
+    S = migrate(Object.assign(fresh(), built, { currency: built.currency || "USD", tips: { welcome: false }, deviceId: S.deviceId }));
+    S.logs.forEach(function (x) { if (!x.cat) x.cat = evKind(x.title)[0]; });
+    markStreakSeen(); save();
     UI.ob = 0; UI.tab = "today"; UI.modal = null; UI.drafts = {}; UI.enter = true; window.scrollTo(0, 0); render();
     toast(t("sample_loaded_name", { name: S.name })); track("sample_" + pid);
   }
@@ -297,10 +1024,11 @@
     return '<li class="item"><span class="time">' + esc(showDate ? dayLabel(e.date) : (e.time || "—")) + "</span>" +
       itemButton("event", e.id, '<span class="grow">' + esc(e.title) + (showDate && e.time ? ' <span class="muted small">· ' + esc(e.time) + "</span>" : "") + '</span><span class="tag" style="--c:' + c + '">' + esc(t("mode_" + (e.mode || "office"))) + "</span>") + "</li>";
   }
-  function taskRow(x) {
+  function taskRow(x, opts) {
+    var focus = opts && opts.focus === true;
     var overdue = x.due && x.due < today() && !x.done;
     return '<li class="item"><button type="button" class="box' + (x.done ? " on" : "") + '" data-act="toggle-task" data-id="' + x.id + '" aria-pressed="' + x.done + '" aria-label="' + esc(x.title) + '">' + (x.done ? icon("check", 14) : "") + "</button>" +
-      itemButton("task", x.id, '<span class="grow' + (x.done ? " struck" : "") + '">' + esc(x.title) + (x.due ? ' <span class="small ' + (overdue ? "bad-text" : "muted") + '">· ' + esc(x.due === today() ? t("today_label") : dayLabel(x.due)) + "</span>" : "") + "</span>") + "</li>";
+      itemButton("task", x.id, '<span class="grow' + (x.done ? " struck" : "") + '">' + (focus ? '<span class="pill ok">' + esc(t("focus_pill")) + "</span> " : "") + esc(x.title) + (x.due ? ' <span class="small ' + (overdue ? "bad-text" : "muted") + '">· ' + esc(x.due === today() ? t("today_label") : dayLabel(x.due)) + "</span>" : "") + "</span>") + (x.done ? "" : runButtons("task", x.id, true)) + "</li>";
   }
   function modeSelect(name, cur) {
     return '<select name="' + name + '">' + S.modes.map(function (m) { return '<option value="' + m + '"' + (m === cur ? " selected" : "") + ">" + esc(t("mode_" + m)) + "</option>"; }).join("") + "</select>";
@@ -324,6 +1052,7 @@
       var top = S.tasks.filter(function (x) { return !x.done; }).sort(byDue)[0];
       if (top) out.push(t("energy_tip_task", { task: top.title, slot: t("slot_" + st.best + "_long") }));
     } else {
+      if (S.rhythm && S.rhythm.peak) out.push(t("energy_guess", { slot: t("slot_" + S.rhythm.peak + "_long") }));
       out.push(t("energy_need_more", { n: Math.max(1, 4 - st.total) }));
     }
     var td = S.energy[today()] || {}, vals = SLOTS.map(function (k) { return td[k]; }).filter(Boolean);
@@ -340,35 +1069,30 @@
     var open = S.tasks.filter(function (x) { return !x.done; }).sort(byDue);
     var dueToday = open.filter(function (x) { return x.due && x.due <= d; }).length;
     var next = evs.filter(function (e) { return !e.time || e.time >= nowHM(); })[0];
-    var c = calorieInfo(), sl = sleepHours(d), st = energyStats();
+    var c = calorieInfo(), sl = sleepHours(d);
     var lines = [];
-    lines.push(!evs.length ? t("brief_no_events") : next ? t("brief_events", { n: evs.length, next: (next.time ? next.time + " " : "") + next.title }) : t("brief_events_done", { n: evs.length }));
     lines.push(open.length ? t("brief_tasks", { n: open.length, d: dueToday }) : t("brief_no_tasks"));
     var ml = modeBriefLine(); if (ml) lines.push(ml);
-    if (sl) lines.push(t("brief_sleep", { h: sl }));
+    if (sl) lines.push(t("brief_sleep", { h: dec(sl) }));
     if (c && !c.blocked && !S.hideNumbers) lines.push(t("brief_kcal", { n: num(c.left) }));
-    if (st.best) lines.push(t("brief_energy", { slot: t("slot_" + st.best + "_long") }));
+    var bsl = bestSlot();
+    if (bsl) lines.push(t(bsl.real ? "brief_energy" : "brief_energy_guess", { slot: t("slot_" + bsl.slot + "_long") }));
 
-    var slot = slotNow(), cur = (S.energy[d] || {})[slot];
-    return '<h1 class="h1">' + esc(greet) + '</h1><p class="sub">' + esc(dayLabel(d)) + "</p>" +
-      welcomeCard() +
-      '<section class="card dark"><h2 class="card-h">' + icon("spark", 16) + esc(t("briefing")) + "</h2><p>" + lines.map(esc).join(" ") + "</p></section>" +
+    return '<h1 class="h1">' + esc(greet) + '</h1><p class="sub">' + esc(dayLabel(d)) + "</p>" + streakRow() +
+      assistantCard(lines) + weeklyBanner() + phaseCard() + energyCard() + welcomeCard() + firstInsight() +
       modeHighlight() +
-      '<section class="card" id="energy-card"><h2 class="card-h">' + esc(t("energy_q_" + { m: "morning", a: "afternoon", e: "evening" }[slot])) + "</h2>" + scale(slot, cur, true) +
-      '<div class="row between wrap"><p class="note">' + esc(cur ? t("energy_tap_again") : "") + '</p><button type="button" class="link-btn" data-act="tab" data-v="routine">' + esc(t("energy_see")) + " →</button></div></section>" +
-      '<div class="cols"><section class="card"><h2 class="card-h">' + esc(t("today_schedule")) + "</h2>" + (evs.length ? '<ul class="list">' + evs.map(function (e) { return eventRow(e); }).join("") + "</ul>" : '<p class="muted">' + esc(t("empty_events")) + "</p>") + "</section>" +
-      '<section class="card"><h2 class="card-h">' + esc(t("today_tasks")) + "</h2>" + (open.length ? '<ul class="list">' + open.slice(0, 6).map(taskRow).join("") + "</ul>" : '<p class="muted">' + esc(t("empty_tasks")) + "</p>") +
+      '<div class="cols"><section class="card"><h2 class="card-h">' + esc(t("today_tasks")) + "</h2>" + (open.length ? '<ul class="list">' + open.slice(0, 6).map(taskRow).join("") + "</ul>" : '<p class="muted">' + esc(t("empty_tasks")) + "</p>") +
       '<form class="form inline quick" data-form="qtask"><input name="title" required maxlength="100" placeholder="' + esc(t("quick_task_ph")) + '" aria-label="' + esc(t("add_task")) + '"><button type="submit" class="btn" aria-label="' + esc(t("add_task")) + '">' + icon("plus", 18) + "</button></form></section></div>" +
       '<section class="card"><h2 class="card-h">' + esc(t("ask_title")) + '</h2><div class="asks">' + aiButtons() + '</div><p class="note">' + esc(t("ask_offline_note")) + "</p></section>";
   }
 
   function welcomeCard() {
     if (!S.tips || !S.tips.welcome || S.sample) return "";
-    var hasTask = S.tasks.length > 0, hasEnergy = Object.keys(S.energy).some(function (k) { return Object.keys(S.energy[k] || {}).length; }), hasFood = !!S.profile || !S.track;
-    if (hasTask && hasEnergy && hasFood) return "";
+    var hasTask = S.tasks.length > 0, hasEnergy = Object.keys(S.energy).some(function (k) { return Object.keys(S.energy[k] || {}).length; }), hasFood = !!S.profile || !S.track, hasRemind = !!(S.reminders && S.reminders.set);
+    if (hasTask && hasEnergy && hasFood && hasRemind) return "";
     var item = function (ok, label, act) { return '<li><button type="button" class="gs' + (ok ? " ok" : "") + '" data-act="' + act + '"><span class="box' + (ok ? " on" : "") + '">' + (ok ? icon("check", 14) : "") + "</span>" + esc(label) + "</button></li>"; };
     return '<section class="card welcome"><div class="row between"><h2 class="card-h">' + esc(t("welcome_title")) + '</h2><button type="button" class="link-btn" data-act="hide-welcome">' + esc(t("gs_hide")) + "</button></div>" +
-      '<p class="note">' + esc(t("welcome_note")) + '</p><ul class="gs-list">' + item(hasTask, t("gs_task"), "gs-task") + item(hasEnergy, t("gs_energy"), "gs-energy") + item(hasFood, t("gs_food"), "gs-food") + "</ul>" +
+      '<p class="note">' + esc(t("welcome_note")) + '</p><ul class="gs-list">' + item(hasTask, t("gs_task"), "gs-task") + item(hasEnergy, t("gs_energy"), "gs-energy") + item(hasFood, t("gs_food"), "gs-food") + item(hasRemind, t("gs_remind"), "gs-remind") + "</ul>" +
       '<button type="button" class="link-btn" data-act="open-samples">' + esc(t("gs_sample")) + " →</button></section>";
   }
 
@@ -396,20 +1120,29 @@
   function modeHighlight() {
     var d = today(), title, body, btn;
     if (S.active === "office") {
-      var nm = S.events.filter(function (e) { return e.date === d && e.mode === "office" && (!e.time || e.time >= nowHM()); }).sort(byTime)[0];
-      title = t("hl_office"); body = nm ? "<b>" + esc(nm.time || "") + "</b> " + esc(nm.title) : esc(t("hl_office_none")); btn = t("hl_office_btn");
+      var bs = bestSlot(), fb = focusBlock();
+      var nm = S.events.filter(function (e) { return e.date === d && e.mode === "office" && !e.focus && (!e.time || e.time >= nowHM()); }).sort(byTime)[0];
+      title = t("hl_focus");
+      body = fb ? "<p>" + esc(t("hl_focus_set", { when: (fb.date === d ? t("today_label") : dayLabel(fb.date)) + " " + fb.time + (fb.end ? "–" + fb.end : ""), title: fb.title })) + "</p>"
+        : bs ? "<p>" + esc(t("hl_focus_tip", { range: PEAK[bs.slot].join("–"), slot: t("slot_" + bs.slot + "_long") })) + '</p><button type="button" class="btn" data-act="focus-block">' + esc(t("hl_focus_btn")) + "</button>"
+        : "<p>" + esc(t("hl_focus_need")) + "</p>";
+      body += '<p class="note">' + esc(t("hl_office")) + ": " + esc(nm ? (nm.time ? nm.time + " " : "") + nm.title : t("hl_office_none")) + "</p>";
+      btn = t("hl_office_btn");
     } else if (S.active === "home") {
       if (!S.mealPlan.length) S.mealPlan = newWeek();
       var left = groceryItems().filter(function (k) { return !S.grocery[k]; }).length;
-      title = t("hl_home"); body = "<b>" + esc(mealName(meal(S.mealPlan[weekdayIndex(d)]))) + '</b> <span class="muted">· ' + esc(t("h_grocery")) + ": " + esc(t("h_left", { n: left })) + "</span>"; btn = t("hl_home_btn");
-    } else if (S.active === "freelancer") {
-      var inv = S.quotes.filter(function (q) { return q.stage === 2; });
-      title = t("hl_free"); body = "<b>" + esc(money(inv.reduce(function (a, q) { return a + (+q.amount || 0); }, 0))) + '</b> <span class="muted">· ' + inv.map(function (q) { return esc(q.client); }).join(", ") + "</span>"; btn = t("hl_free_btn");
+      title = t("hl_home");
+      body = "<p><b>" + esc(mealName(meal(S.mealPlan[weekdayIndex(d)]))) + '</b> <span class="muted">· ' + esc(t("h_grocery")) + ": " + esc(t("h_left", { n: left })) + "</span></p>" +
+        (left ? '<button type="button" class="btn ghost" data-act="share-grocery">' + esc(t("hl_share_grocery")) + "</button>" : "");
+      btn = t("hl_home_btn");
     } else {
-      var g = nextGig();
-      title = t("hl_artist"); body = g ? "<b>" + esc(g.venue) + '</b> <span class="muted">· ' + esc(dayLabel(g.date)) + " · " + esc(money(g.fee)) + "</span>" + (g.deposit > 0 && !g.depPaid ? ' <span class="pill bad">' + esc(t("a_dep_unpaid")) + "</span>" : "") : esc(t("brief_artist_none")); btn = t("hl_artist_btn");
+      var items = moneyItems();
+      title = t(S.active === "freelancer" ? "hl_money" : "hl_money_artist");
+      body = items.length ? '<ul class="list">' + items.slice(0, 3).map(moneyRow).join("") + "</ul>" + (items.length > 3 ? '<p class="note">' + esc(t("hl_money_more", { n: items.length - 3 })) + "</p>" : "")
+        : "<p>" + esc(t(S.active === "freelancer" ? "hl_money_none" : "hl_money_none_artist")) + "</p>";
+      btn = t(S.active === "freelancer" ? "hl_free_btn" : "hl_artist_btn");
     }
-    return '<section class="card highlight" style="--c:' + DATA.modes[S.active].accent + '"><h2 class="card-h">' + icon(DATA.modes[S.active].icon, 16) + esc(title) + "</h2><p>" + body + '</p><button type="button" class="link-btn" data-act="tab" data-v="mode">' + esc(btn) + " →</button></section>";
+    return '<section class="card highlight" style="--c:' + DATA.modes[S.active].accent + '"><h2 class="card-h">' + icon(DATA.modes[S.active].icon, 16) + esc(title) + "</h2>" + body + '<button type="button" class="link-btn" data-act="tab" data-v="mode">' + esc(btn) + " →</button></section>";
   }
 
   function aiButtons() {
@@ -422,6 +1155,89 @@
     }).join("");
   }
 
+  // ---------- Today: daily rhythm cards ----------
+  function streakRow() {
+    var s = streakInfo(), nm = nextMilestone(s.n);
+    var txt = s.n ? t("streak_n", { n: s.n }) : t("streak_zero");
+    var extra = s.n && nm ? t("streak_next", { d: nm[0] - s.n, c: nm[1] }) : "";
+    return '<div class="streak-row"><span class="streak' + (s.today ? " on" : "") + '">' + icon("flame", 16) + "<b>" + esc(txt) + "</b></span>" +
+      (extra ? '<span class="muted small">' + esc(extra) + "</span>" : "") +
+      '<button type="button" class="link-btn" data-act="review" data-v="7">' + esc(t("rv_week_btn")) + " →</button></div>";
+  }
+  function weeklyBanner() {
+    var wi = weekdayIndex(today()); if (wi !== 6 && wi !== 0) return "";
+    var key = lastSunday(); if (S.lastWeekly === key || periodStats(key, 7).checkins < 3) return "";
+    return '<section class="card highlight"><h2 class="card-h">' + icon("spark", 16) + esc(t("rv_ready")) + "</h2><p>" + esc(t("rv_ready_note")) + '</p><button type="button" class="btn" data-act="review" data-v="7" data-end="' + key + '">' + esc(t("rv_open")) + "</button></section>";
+  }
+  function firstInsight() {
+    if (!S.rhythm || energyStats().best) return "";
+    var h = hoursBetween(S.rhythm.bed, S.rhythm.wake), L = [];
+    L.push(t("fi_sleep", { h: dec(h), bed: S.rhythm.bed, wake: S.rhythm.wake }));
+    if (h < 7) { var w = S.rhythm.wake.split(":"), m = ((+w[0] * 60 + +w[1] - 450) % 1440 + 1440) % 1440; L.push(t("fi_sleep_low", { time: pad(Math.floor(m / 60)) + ":" + pad(m % 60) })); }
+    if (S.rhythm.peak) L.push(t("fi_peak", { slot: t("slot_" + S.rhythm.peak + "_long"), range: PEAK[S.rhythm.peak].join("–") }));
+    L.push(t("fi_check", { n: Math.max(1, 4 - energyStats().total) }));
+    return '<section class="card insight-card"><h2 class="card-h">' + icon("spark", 16) + esc(t("fi_title")) + "</h2>" + ulist(L) + "</section>";
+  }
+  function topThree() {
+    var d = today(), open = S.tasks.filter(function (x) { return !x.done; }).sort(byDue);
+    var f = S.focus && S.focus[d] && findById(open, S.focus[d]);
+    return (f ? [f].concat(open.filter(function (x) { return x !== f; })) : open).slice(0, 3);
+  }
+  function phaseCard() {
+    var h = new Date().getHours();
+    if (h >= 4 && h < 12) return morningCard();
+    if (h >= 18 || h < 4) return eveningCard();
+    return ""; // afternoon: the energy card below covers it
+  }
+  function morningCard() {
+    var d = today(), sl = sleepHours(d), us = usualSleep(), cur = (S.energy[d] || {}).m, top = topThree(), bs = bestSlot(), focusId = (S.focus || {})[d];
+    var sleepPart = sl ? '<p class="done-line">' + icon("check", 14) + esc(t("mc_slept", { h: dec(sl) })) + "</p>" :
+      '<p class="q">' + esc(t("mc_sleep_q")) + '</p><div class="row gap wrap">' +
+      (us ? '<button type="button" class="btn" data-act="sleep-usual">' + esc(t("mc_usual", { bed: us.bed, wake: us.wake })) + "</button>" : "") +
+      '<button type="button" class="btn ghost" data-act="sleep-other">' + esc(t("mc_other")) + "</button></div>";
+    var step = function (n, inner, ok) { return '<div class="phase-step' + (ok ? " ok" : "") + '"><span class="num">' + (ok ? icon("check", 14) : n) + '</span><div class="grow">' + inner + "</div></div>"; };
+    return '<section class="card phase" id="phase-card"><h2 class="card-h">' + icon("sun", 16) + esc(t("mc_title")) + '<span class="muted small push">' + esc(t("mc_time")) + "</span></h2>" +
+      step(1, sleepPart, !!sl) +
+      step(2, '<p class="q">' + esc(t("ci_q_morning")) + "</p>" + checkStep("m"), !!cur) +
+      step(3, '<p class="q">' + esc(t("mc_top3")) + "</p>" + (top.length ? '<ul class="list">' + top.map(function (x) { return taskRow(x, { focus: x.id === focusId }); }).join("") + "</ul>" : '<p class="muted">' + esc(t("empty_tasks")) + "</p>") +
+        (bs ? '<p class="note">' + esc(t(bs.real ? "mc_hard" : "mc_hard_guess", { range: PEAK[bs.slot].join("–"), slot: t("slot_" + bs.slot + "_long") })) + "</p>" : ""), false) +
+      "</section>";
+  }
+  function eveningCard() {
+    var d = today(), tm = addDays(d, 1), cur = (S.energy[d] || {}).e;
+    var doneToday = S.tasks.filter(function (x) { return x.done && x.doneAt === d; }).length;
+    var open = S.tasks.filter(function (x) { return !x.done; }).sort(byDue).slice(0, 5);
+    var picked = (S.focus || {})[tm], finished = cur && (picked || !open.length);
+    var step = function (n, inner, ok) { return '<div class="phase-step' + (ok ? " ok" : "") + '"><span class="num">' + (ok ? icon("check", 14) : n) + '</span><div class="grow">' + inner + "</div></div>"; };
+    return '<section class="card phase" id="phase-card"><h2 class="card-h">' + icon("moon", 16) + esc(t("ec_title")) + '<span class="muted small push">' + esc(t("ec_time")) + "</span></h2>" +
+      (finished ? '<p class="done-line big">' + icon("check", 16) + esc(t("ec_done", { n: streakInfo().n })) + "</p>" : "") +
+      step(1, '<p class="q">' + esc(t("ci_q_evening")) + "</p>" + checkStep("e"), !!cur) +
+      step(2, '<p class="q">' + esc(t("ec_tomorrow")) + "</p>" + (open.length ? '<div class="pick-list">' + open.map(function (x) {
+        var on = picked === x.id;
+        return '<button type="button" class="pick' + (on ? " on" : "") + '" data-act="focus-pick" data-id="' + esc(x.id) + '" aria-pressed="' + on + '">' + (on ? icon("check", 14) : "") + "<span>" + esc(x.title) + "</span></button>";
+      }).join("") + "</div>" : '<p class="muted">' + esc(t("ec_no_tasks")) + "</p>"), !!picked) +
+      '<p class="note">' + esc(doneToday ? t("ec_done_today", { n: doneToday }) : t("ec_none_today")) + "</p></section>";
+  }
+  function reviewCard() {
+    var open = S.unlocks && S.unlocks["month:" + today().slice(0, 7)];
+    return '<section class="card"><h2 class="card-h">' + icon("spark", 16) + esc(t("rv_title")) + '</h2><p class="note">' + esc(t("rv_note")) + '</p><div class="row gap wrap">' +
+      '<button type="button" class="btn" data-act="review" data-v="7">' + esc(t("rv_week_btn")) + "</button>" +
+      '<button type="button" class="btn ghost" data-act="review" data-v="30">' + esc(open ? t("rv_month_btn") : t("rv_month_lock", { n: MONTH_COST })) + "</button></div></section>";
+  }
+  function remindCard() {
+    var R = S.reminders, hasN = "Notification" in window, on = hasN && R.notify && Notification.permission === "granted";
+    return '<section class="card" id="remind-card"><h2 class="card-h">' + icon("bell", 16) + esc(t("rm_title")) + '</h2><p class="note">' + esc(t("rm_note")) + "</p>" +
+      '<form class="form inline" data-form="remind">' + timeSelect("morning", R.morning, t("rm_morning")) + timeSelect("evening", R.evening, t("rm_evening")) + '<button type="submit" class="btn ghost">' + esc(t("save")) + "</button></form>" +
+      '<div class="row gap wrap"><button type="button" class="btn" data-act="remind-ics">' + icon("cal", 16) + esc(t("rm_ics")) + "</button>" +
+      (hasN ? '<button type="button" class="btn ghost" data-act="remind-notify"' + (on ? " disabled" : "") + ">" + icon("bell", 16) + esc(on ? t("rm_notify_on") : t("rm_notify")) + "</button>" : "") + "</div>" +
+      '<p class="note">' + esc(t("rm_ics_note")) + "</p></section>";
+  }
+  function icsCard() {
+    return '<section class="card" id="ics-card"><h2 class="card-h">' + icon("cal", 16) + esc(t("ics_title")) + '</h2><p class="note">' + esc(t("ics_note")) + "</p>" +
+      '<ol class="steps-list"><li>' + esc(t("ics_g")) + "</li><li>" + esc(t("ics_o")) + "</li></ol>" +
+      '<label class="btn ghost file-btn">' + esc(t("ics_btn")) + '<input type="file" accept=".ics,text/calendar" data-act="import-ics"></label></section>';
+  }
+
   // ---------- Plan ----------
   function scrPlan() {
     var seg = '<div class="seg wide" role="tablist"><button type="button" role="tab" aria-selected="' + (UI.planTab === "calendar") + '" class="' + (UI.planTab === "calendar" ? "on" : "") + '" data-act="plan-tab" data-v="calendar">' + esc(t("plan_calendar")) + '</button><button type="button" role="tab" aria-selected="' + (UI.planTab === "tasks") + '" class="' + (UI.planTab === "tasks" ? "on" : "") + '" data-act="plan-tab" data-v="tasks">' + esc(t("plan_tasks")) + "</button></div>";
@@ -429,7 +1245,7 @@
       var days = []; for (var i = 0; i < 7; i++) days.push(addDays(today(), i));
       var later = S.events.filter(function (e) { return e.date > days[6]; }).sort(function (a, b) { return (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")); });
       return '<h1 class="h1">' + esc(t("nav_plan")) + "</h1>" + seg +
-        '<form class="card form inline" data-form="event"><input name="title" required maxlength="80" placeholder="' + esc(t("ev_title")) + '" aria-label="' + esc(t("ev_title")) + '"><input name="date" type="date" required value="' + today() + '" aria-label="' + esc(t("ev_date")) + '"><input name="time" type="time" aria-label="' + esc(t("ev_time")) + '">' + (S.modes.length > 1 ? '<label class="sel-wrap" aria-label="' + esc(t("mode_label")) + '">' + modeSelect("mode", S.active) + "</label>" : "") + '<button type="submit" class="btn">' + icon("plus", 16) + esc(t("add_event")) + "</button></form>" +
+        '<form class="card form inline" data-form="event"><input name="title" required maxlength="80" placeholder="' + esc(t("ev_title")) + '" aria-label="' + esc(t("ev_title")) + '"><input name="date" type="date" required value="' + today() + '" aria-label="' + esc(t("ev_date")) + '"><input name="time" type="time" aria-label="' + esc(t("ev_time")) + '"><input name="end" type="time" aria-label="' + esc(t("ev_end")) + '" title="' + esc(t("ev_end")) + '">' + (S.modes.length > 1 ? '<label class="sel-wrap" aria-label="' + esc(t("mode_label")) + '">' + modeSelect("mode", S.active) + "</label>" : "") + '<button type="submit" class="btn">' + icon("plus", 16) + esc(t("add_event")) + "</button></form>" +
         '<p class="note">' + esc(t("tap_to_edit")) + "</p>" +
         days.map(function (d) {
           var evs = S.events.filter(function (e) { return e.date === d; }).sort(byTime);
@@ -446,14 +1262,10 @@
 
   // ---------- Routine ----------
   function scrRoutine() {
-    return '<h1 class="h1">' + esc(t("nav_routine")) + "</h1>" + energyFull() + sleepCard() + waterCard() + foodCard();
+    return '<h1 class="h1">' + esc(t("nav_routine")) + "</h1>" + reviewCard() + energyFull() + timeCard() + sleepCard() + waterCard() + foodCard();
   }
   function energyFull() {
-    var d = today(), day = S.energy[d] || {};
-    var rows = SLOTS.map(function (k) {
-      return '<div class="slot-row' + (k === slotNow() ? " now" : "") + '"><div class="slot-name"><b>' + esc(t("slot_" + k)) + '</b><span class="muted small">' + esc(t("slot_" + k + "_range")) + "</span></div>" + scale(k, day[k], false) + "</div>";
-    }).join("");
-    var legend = '<p class="legend">' + [1, 2, 3, 4, 5].map(function (v) { return "<span><b>" + v + "</b> " + esc(t("lv" + v)) + "</span>"; }).join("") + "</p>";
+    var d = today(), m = energyModel();
     var days = []; for (var i = 6; i >= 0; i--) days.push(addDays(d, -i));
     var grid = '<div class="heat" role="table" aria-label="' + esc(t("energy_week")) + '"><div role="row" class="heat-row"><span role="columnheader"></span>' + days.map(function (x) { return '<span role="columnheader" class="heat-day' + (x === d ? " now" : "") + '">' + esc(dayShort(x)) + "</span>"; }).join("") + "</div>" +
       SLOTS.map(function (k) {
@@ -462,9 +1274,19 @@
           return '<span role="cell" class="heat-cell' + (v ? " v" + v : "") + '" title="' + esc(dayLabel(x) + " · " + t("slot_" + k) + (v ? " · " + v + "/5 " + t("lv" + v) : "")) + '">' + (v || "") + "</span>";
         }).join("") + "</div>";
       }).join("") + "</div>";
-    return '<section class="card"><h2 class="card-h">' + esc(t("energy")) + "</h2>" + rows + legend +
-      '<h3 class="sub-h">' + esc(t("energy_week")) + "</h3>" + grid +
-      '<div class="insight">' + icon("spark", 16) + "<div>" + energyInsightLines().map(function (l) { return "<p>" + esc(l) + "</p>"; }).join("") + "</div></div></section>";
+    var log = m.checks.length ? '<ul class="check-log">' + m.checks.map(function (c, i) {
+      return "<li><div><b>" + esc(c.t) + "</b> · " + esc(t("lv" + c.body)) + " · " + esc(t("md" + c.mood)) + " · " + esc(t("ci_stress_s").toLowerCase() + " " + t("st" + c.stress).toLowerCase()) +
+        (c.note ? '<span class="muted small">' + esc(c.note) + "</span>" : "") + '</div><button type="button" class="mini" data-act="del-check" data-i="' + i + '" aria-label="' + esc(t("delete")) + '">' + esc(t("delete")) + "</button></li>";
+    }).join("") + "</ul>" : '<p class="muted">' + esc(t("em_no_check")) + "</p>";
+    return '<section class="card"><h2 class="card-h">' + icon("bolt", 16) + esc(t("em_title")) + "</h2>" + batteryHtml(m) +
+      '<h3 class="sub-h">' + esc(t("em_cap_h")) + "</h3>" + kv(m.cap.map(function (x) { return [x[0], x === m.cap[0] ? String(x[1]) : signed(x[1]), x[1] < 0 ? "bad-text" : ""]; }).concat([[t("em_total"), String(m.capT)]])) +
+      '<h3 class="sub-h">' + esc(t("em_dem_h")) + "</h3>" + kv(m.dem.map(function (x) { return [x[0], "−" + x[1]]; }).concat([[t("em_total"), String(m.demT)]])) +
+      kv([[t("em_bal"), signed(m.bal) + " · " + t("em_status_" + m.status), m.status === "over" ? "bad-text" : m.status === "ok" ? "ok-text" : ""], [t("em_left_plan"), m.left + "%"]]) +
+      '<h3 class="sub-h">' + esc(t("em_log_h")) + "</h3>" + log +
+      '<button type="button" class="btn full" data-act="checkin">' + esc(t("ci_open")) + "</button>" +
+      '<h3 class="sub-h">' + esc(t("tips_title")) + "</h3>" + tipsHtml(energyTips(m)) +
+      '<h3 class="sub-h">' + esc(t("energy_week")) + "</h3>" + grid + ulist(energyInsightLines()) +
+      '<p class="note">' + esc(t("em_formula")) + "</p></section>";
   }
   function sleepCard() {
     var d = today(), s = S.sleep[d] || {}, sl = sleepHours(d);
@@ -475,7 +1297,7 @@
       var h = vals[i];
       return '<div class="sb"><span class="sb-val">' + (h ? h : "") + '</span><div class="sb-track"><span class="goal"></span><span class="sb-bar' + (h && h < 7 ? " low" : "") + '" style="height:' + (h ? Math.min(100, h / 10 * 100) : 0) + '%"></span></div><span class="sb-day">' + esc(dayShort(x)) + "</span></div>";
     }).join("") + "</div>" : "";
-    return '<section class="card"><h2 class="card-h">' + esc(t("r_sleep")) + " · " + esc(t("r_last_night")) + "</h2>" +
+    return '<section class="card" id="sleep-card"><h2 class="card-h">' + esc(t("r_sleep")) + " · " + esc(t("r_last_night")) + "</h2>" +
       '<form class="form inline" data-form="sleep">' + timeSelect("bed", s.bed, t("r_bed")) + timeSelect("wake", s.wake, t("r_wake")) + '<button type="submit" class="btn">' + esc(t("save")) + "</button></form>" +
       (sl ? '<p class="big-num">' + esc(t("r_sleep_hours", { h: sl })) + "</p>" + (sl < 7 ? '<p class="warn">' + esc(t("r_sleep_low")) + "</p>" : "") : "") +
       '<h3 class="sub-h">' + esc(logged.length ? t("r_sleep_week", { h: avg }) : t("r_sleep_none")) + "</h3>" + bars +
@@ -581,7 +1403,7 @@
     var currencies = ["USD", "GBP", "EUR", "VND"];
     return feedback +
       '<h1 class="h1">' + esc(t("m_settings")) + "</h1>" +
-      '<section class="card"><h2 class="card-h">' + icon("spark", 16) + esc(t("credits_title")) + " · " + S.credits + '</h2><p>' + esc(t("credits_what")) + '</p><p class="note">' + esc(t("credits_costs")) + '</p><p class="note">' + esc(t("credits_test")) + "</p>" +
+      '<section class="card"><h2 class="card-h">' + icon("spark", 16) + esc(t("credits_title")) + " · " + S.credits + '</h2><p>' + esc(t("credits_what")) + "</p>" + ulist([t("credits_costs"), t("credits_earn"), t("credits_test")]) +
       '<button type="button" class="btn' + (claimed ? " ghost" : "") + '" data-act="bonus"' + (claimed ? " disabled" : "") + ">" + esc(claimed ? t("daily_claimed") : t("daily_bonus", { n: CFG.DAILY_BONUS || 2 })) + "</button></section>" +
       '<section class="card"><h2 class="card-h">' + esc(t("m_language")) + " & " + esc(t("m_currency")) + '</h2><div class="row gap wrap"><div class="seg"><button type="button" class="' + (S.lang === "en" ? "on" : "") + '" data-act="set-lang" data-v="en" aria-pressed="' + (S.lang === "en") + '">English</button><button type="button" class="' + (S.lang === "vi" ? "on" : "") + '" data-act="set-lang" data-v="vi" aria-pressed="' + (S.lang === "vi") + '">Tiếng Việt</button></div>' +
       '<label class="sel-wrap" aria-label="' + esc(t("m_currency")) + '"><select data-act="currency">' + currencies.map(function (c) { return '<option value="' + c + '"' + (S.currency === c ? " selected" : "") + ">" + c + "</option>"; }).join("") + "</select></label></div></section>" +
@@ -590,9 +1412,18 @@
         return '<label class="check mode-toggle" style="--c:' + DATA.modes[m].accent + '"><input type="checkbox" data-act="toggle-mode" data-v="' + m + '"' + (on ? " checked" : "") + (m === "office" ? " disabled" : "") + "> <span><b>" + esc(t("mode_" + m)) + '</b><br><span class="muted small">' + esc(t("mode_" + m + "_desc")) + "</span></span></label>";
       }).join("") + "</section>" +
       '<section class="card"><h2 class="card-h">' + esc(t("m_profile")) + '</h2><label class="check"><input type="checkbox" data-act="toggle-track"' + (S.track ? " checked" : "") + "> <span>" + esc(t("r_track")) + "</span></label>" + (S.track ? profileForm("body") : "") + "</section>" +
+      remindCard() + icsCard() + syncCard() +
       '<section class="card"><h2 class="card-h">' + esc(t("m_samples")) + '</h2><p class="note">' + esc(t("m_samples_note")) + "</p>" + sampleCards() + "</section>" +
       '<section class="card"><h2 class="card-h">' + esc(t("m_data")) + '</h2><p class="note">' + esc(t("m_data_note")) + '</p><div class="row gap wrap"><button type="button" class="btn ghost" data-act="export">' + esc(t("m_export")) + '</button><label class="btn ghost file-btn">' + esc(t("m_import")) + '<input type="file" accept=".json,application/json" data-act="import"></label><button type="button" class="btn danger" data-act="reset">' + esc(t("m_reset")) + '</button></div><p class="note">' + esc(t("m_install")) + "</p></section>" +
       '<p class="note center">' + esc(t("m_about")) + "</p>";
+  }
+
+  function syncCard() {
+    if (!CFG.SHEET_ENDPOINT) return "";
+    return '<section class="card"><h2 class="card-h">' + esc(t("sync_title")) + '</h2><p class="note" id="sync-status" role="status">' + esc(syncLabel()) + "</p>" +
+      '<p>' + esc(t("sync_code_note")) + '</p><div class="code-row"><code class="sync-code">' + esc(S.deviceId) + '</code><button type="button" class="mini" data-act="copy-code">' + esc(t("sync_copy")) + "</button></div>" +
+      '<form class="form inline" data-form="restore"><input name="code" required maxlength="64" placeholder="' + esc(t("sync_restore_ph")) + '" aria-label="' + esc(t("sync_restore_ph")) + '" autocomplete="off" spellcheck="false"><button type="submit" class="btn ghost">' + esc(t("sync_restore_btn")) + "</button></form>" +
+      '<div class="row gap wrap"><button type="button" class="btn ghost" data-act="sync-now">' + esc(t("sync_now")) + '</button></div><p class="note">' + esc(t("consent_note")) + "</p></section>";
   }
 
   // ---------- modals ----------
@@ -603,12 +1434,15 @@
     if (M.kind === "credits") {
       var claimed = S.lastBonus === today();
       title = t("credits_title") + " · " + S.credits;
-      inner = "<p>" + esc(t("credits_what")) + '</p><p class="note">' + esc(t("credits_costs")) + '</p><p class="note">' + esc(t("credits_test")) + "</p>" +
+      inner = "<p>" + esc(t("credits_what")) + "</p>" + ulist([t("credits_costs"), t("credits_earn"), t("credits_test")]) +
         '<button type="button" class="btn full' + (claimed ? " ghost" : "") + '" data-act="bonus"' + (claimed ? " disabled" : "") + ">" + esc(claimed ? t("daily_claimed") : t("daily_bonus", { n: CFG.DAILY_BONUS || 2 })) + "</button>";
     }
+    if (M.kind === "checkin") { title = t(M.after ? "ci_title_after" : "ci_title"); inner = checkinForm(M.after); }
+    if (M.kind === "checkin-done") { title = t("ci_done_title"); inner = checkinResult(M.c); }
+    if (M.kind === "review") { title = t(M.days > 7 ? "rv_month_title" : "rv_week_title"); inner = reviewHtml(M.days, M.end); }
     if (M.kind === "samples") { title = t("m_samples"); inner = '<p class="note">' + esc(t("m_samples_note")) + "</p>" + sampleCards(); }
     if (M.kind === "edit") { var e = editForm(M.type, M.id); if (!e) return ""; title = e.title; inner = e.html; }
-    return '<div class="modal-bg" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-stop="1"><div class="row between"><h2 class="card-h" id="modal-title">' + (M.kind === "ai" ? icon("spark", 16) : "") + esc(title) + '</h2><button type="button" class="icon-btn" data-act="close-modal" aria-label="' + esc(t("close")) + '">' + icon("x", 18) + "</button></div>" + inner + "</div></div>";
+    return '<div class="modal-bg" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" data-stop="1"><div class="row between"><h2 class="card-h" id="modal-title">' + (M.kind === "ai" || M.kind === "review" ? icon("spark", 16) : M.kind === "checkin" || M.kind === "checkin-done" ? icon("bolt", 16) : "") + esc(title) + '</h2><button type="button" class="icon-btn" data-act="close-modal" aria-label="' + esc(t("close")) + '">' + icon("x", 18) + "</button></div>" + inner + "</div></div>";
   }
   function openModal(m) { UI.modal = m; UI.modalJustOpened = true; render(); }
 
@@ -625,8 +1459,8 @@
     var inp = function (name, val, extra) { return '<input name="' + name + '" value="' + esc(val == null ? "" : val) + '" ' + (extra || "") + ">"; };
     var chk = function (name, on, label) { return '<label class="check"><input type="checkbox" name="' + name + '"' + (on ? " checked" : "") + "> <span>" + esc(label) + "</span></label>"; };
     var body = "", title = t("edit");
-    if (type === "task") body = f(t("task_title"), inp("title", x.title, 'required maxlength="100"')) + '<div class="grid2">' + f(t("due"), inp("due", x.due, 'type="date"')) + f(t("mode_label"), modeSelect("mode", x.mode)) + "</div>" + chk("done", x.done, t("done"));
-    if (type === "event") body = f(t("ev_title"), inp("title", x.title, 'required maxlength="80"')) + '<div class="grid2">' + f(t("ev_date"), inp("date", x.date, 'type="date" required')) + f(t("ev_time"), inp("time", x.time, 'type="time"')) + "</div>" + f(t("mode_label"), modeSelect("mode", x.mode));
+    if (type === "task") body = f(t("task_title"), inp("title", x.title, 'required maxlength="100"')) + '<div class="grid2">' + f(t("due"), inp("due", x.due, 'type="date"')) + f(t("mode_label"), modeSelect("mode", x.mode)) + "</div>" + f(t("task_est"), inp("est", x.est || "", 'type="number" min="5" max="600" step="5" inputmode="numeric" placeholder="' + TASK_DEFAULT_MIN + '"')) + chk("done", x.done, t("done"));
+    if (type === "event") body = f(t("ev_title"), inp("title", x.title, 'required maxlength="80"')) + '<div class="grid2">' + f(t("ev_date"), inp("date", x.date, 'type="date" required')) + f(t("ev_time"), inp("time", x.time, 'type="time"')) + f(t("ev_end"), inp("end", x.end, 'type="time"')) + f(t("ev_travel"), inp("travel", x.travel, 'type="number" min="0" max="240" inputmode="numeric"')) + "</div>" + f(t("mode_label"), modeSelect("mode", x.mode));
     if (type === "quote") body = f(t("f_client"), inp("client", x.client, 'required maxlength="60"')) + f(t("f_service"), inp("service", x.service, 'maxlength="60"')) + '<div class="grid2">' + f(t("f_amount") + " (" + S.currency + ")", inp("amount", x.amount, 'type="number" min="0" required')) +
       f(t("f_stage"), '<select name="stage">' + t("f_stages").map(function (s, i) { return '<option value="' + i + '"' + (i === x.stage ? " selected" : "") + ">" + esc(s) + "</option>"; }).join("") + "</select>") + "</div>";
     if (type === "gig") body = f(t("a_venue"), inp("venue", x.venue, 'required maxlength="60"')) + f(t("a_date"), inp("date", x.date, 'type="date" required')) + '<div class="grid2">' + f(t("a_fee") + " (" + S.currency + ")", inp("fee", x.fee, 'type="number" min="0" required')) + f(t("a_deposit"), inp("deposit", x.deposit, 'type="number" min="0"')) + "</div>" + chk("depPaid", x.depPaid, t("a_dep_paid")) + chk("fullPaid", x.fullPaid, t("a_fully_paid"));
@@ -636,12 +1470,24 @@
   function saveEdit(fd) {
     var M = UI.modal, x = getItem(M.type, M.id); if (!x) return;
     var g = function (k) { return (fd.get(k) || "").toString().trim(); };
-    if (M.type === "task") { x.title = g("title"); x.due = g("due"); x.mode = g("mode") || x.mode; x.done = fd.get("done") === "on"; }
-    if (M.type === "event") { x.title = g("title"); x.date = g("date"); x.time = g("time"); x.mode = g("mode") || x.mode; }
-    if (M.type === "quote") { x.client = g("client"); x.service = g("service"); x.amount = +g("amount") || 0; x.stage = +g("stage") || 0; }
-    if (M.type === "gig") { x.venue = g("venue"); x.date = g("date"); x.fee = +g("fee") || 0; x.deposit = +g("deposit") || 0; x.depPaid = fd.get("depPaid") === "on"; x.fullPaid = fd.get("fullPaid") === "on"; if (x.fullPaid) x.depPaid = true; }
+    if (M.type === "task") { var was = x.done; x.title = g("title"); x.due = g("due"); x.mode = g("mode") || x.mode; x.est = +g("est") || 0; x.done = fd.get("done") === "on"; if (x.done && !was) x.doneAt = today(); if (!x.done) x.doneAt = ""; }
+    if (M.type === "event") { x.title = g("title"); x.date = g("date"); x.time = g("time"); x.end = g("end") > g("time") ? g("end") : ""; x.travel = Math.max(0, +g("travel") || 0); x.mode = g("mode") || x.mode; }
+    if (M.type === "quote") { x.client = g("client"); x.service = g("service"); x.amount = +g("amount") || 0; x.stage = +g("stage") || 0; stageDates(x); }
+    if (M.type === "gig") { x.venue = g("venue"); x.date = g("date"); x.fee = +g("fee") || 0; x.deposit = +g("deposit") || 0; x.depPaid = fd.get("depPaid") === "on"; x.fullPaid = fd.get("fullPaid") === "on"; if (x.fullPaid) { x.depPaid = true; if (!x.paidAt) x.paidAt = today(); } else x.paidAt = ""; }
     if (M.type === "meal") { x.name = g("name"); x.kcal = +g("kcal") || 0; }
     UI.modal = null; clearDrafts("edit"); save(); render(); toast(t("saved"));
+  }
+  function stageDates(q) {
+    if (q.stage >= 2 && !q.invoicedAt) q.invoicedAt = today();
+    if (q.stage === 3 && !q.paidAt) q.paidAt = today();
+    if (q.stage < 3) q.paidAt = "";
+    if (q.stage < 2) q.invoicedAt = "";
+  }
+  function finishOnboarding(withRhythm) {
+    if (withRhythm && UI.obR.peak) S.rhythm = { bed: UI.obR.bed, wake: UI.obR.wake, peak: UI.obR.peak };
+    S.modes = DATA.modeOrder.filter(function (m) { return m === "office" || UI.obModes[m]; });
+    S.active = S.modes[S.modes.length > 1 ? 1 : 0]; S.onboarded = true; S.tips = { welcome: true };
+    save(); UI.tab = "today"; UI.enter = true; render(); track(withRhythm ? "onboarding_done" : "onboarding_done_skip"); pushSync(); scheduleReminders();
   }
   function deleteItem(type, id) {
     var list, idx, item, date;
@@ -767,13 +1613,13 @@
       case "lang": if (!S.onboarded) { var n0 = document.getElementById("ob-name"); if (n0) S.name = n0.value.trim(); } S.lang = S.lang === "vi" ? "en" : "vi"; break;
       case "set-lang": S.lang = v; break;
       case "ob-next": var nm = document.getElementById("ob-name"); S.name = nm ? nm.value.trim() : ""; UI.ob = 1; render(); track("onboarding_step2"); return;
-      case "ob-back": UI.ob = 0; render(); return;
+      case "ob-back": UI.ob = UI.ob === 2 ? 1 : 0; render(); return;
+      case "ob-rhythm": UI.ob = 2; render(); track("onboarding_step3"); return;
+      case "ob-r": UI.obR[el.getAttribute("data-k")] = v; render(); return;
+      case "ob-skip": finishOnboarding(false); return;
       case "ob-demo": var nm2 = document.getElementById("ob-name"); if (nm2) S.name = nm2.value.trim(); UI.ob = "demo"; render(); return;
       case "ob-mode": UI.obModes[v] = !UI.obModes[v]; render(); return;
-      case "ob-finish":
-        S.modes = DATA.modeOrder.filter(function (m) { return m === "office" || UI.obModes[m]; });
-        S.active = S.modes[S.modes.length > 1 ? 1 : 0]; S.onboarded = true; S.tips = { welcome: true };
-        save(); UI.tab = "today"; UI.enter = true; render(); track("onboarding_done"); return;
+      case "ob-finish": finishOnboarding(true); return;
       case "sample": if (S.onboarded && !window.confirm(t("sample_confirm"))) return; loadSample(v); return;
       case "open-samples": openModal({ kind: "samples" }); return;
       case "hide-welcome": S.tips.welcome = false; break;
@@ -781,14 +1627,42 @@
       case "gs-energy": var ec = document.getElementById("energy-card"); if (ec) ec.scrollIntoView({ block: "center", behavior: "smooth" }); return;
       case "gs-food": UI.tab = "routine"; UI.showBody = true; S.track = true; save(); render(); var fc = document.getElementById("food-card"); if (fc) fc.scrollIntoView({ block: "start" }); return;
       case "mode": S.active = v; UI.enter = true; track("mode_" + v); break;
-      case "tab": UI.tab = v; UI.modal = null; UI.enter = true; window.scrollTo(0, 0); track("tab_" + v); break;
-      case "plan-tab": UI.planTab = v; break;
+      case "tab": UI.tab = v; UI.modal = null; UI.enter = true; window.scrollTo(0, 0); track("tab_" + v); render(); return;
+      case "plan-tab": UI.planTab = v; render(); return;
       case "credits": openModal({ kind: "credits" }); return;
+      case "sync-now": pushSync(); return;
+      case "copy-code": copyText(S.deviceId, t("sync_copied")); return;
       case "bonus":
         if (S.lastBonus === today()) { toast(t("daily_claimed")); return; }
         S.lastBonus = today(); S.credits += CFG.DAILY_BONUS || 2; save(); render(); toast(t("daily_bonus", { n: CFG.DAILY_BONUS || 2 }) + " ✓"); track("daily_bonus"); return;
       case "energy": setEnergy(el.getAttribute("data-slot"), +v); return;
-      case "toggle-task": var tk = findById(S.tasks, id); if (tk) tk.done = !tk.done; break;
+      case "toggle-task": if (S.run && S.run.ref === id) { stopRun(); return; } var tk = findById(S.tasks, id); if (tk) { tk.done = !tk.done; tk.doneAt = tk.done ? today() : ""; if (tk.done) track("task_done"); } break;
+      case "sleep-usual": var us = usualSleep(); if (!us) return; S.sleep[today()] = { bed: us.bed, wake: us.wake }; track("sleep_quick"); toast(t("saved")); break;
+      case "sleep-other": UI.tab = "routine"; UI.enter = true; render(); var sc = document.getElementById("sleep-card"); if (sc) sc.scrollIntoView({ block: "start" }); return;
+      case "focus-pick": var tmr = addDays(today(), 1); S.focus[tmr] = S.focus[tmr] === id ? "" : id; if (!S.focus[tmr]) delete S.focus[tmr]; else { S.checkins[today()] = 1; track("evening_focus"); } break;
+      case "focus-block": addFocusBlock(); return;
+      case "checkin": openModal({ kind: "checkin" }); track("checkin_open"); return;
+      case "run-start": startRun(el.getAttribute("data-kind"), id); return;
+      case "run-stop": stopRun(); return;
+      case "run-cancel": S.run = null; save(); render(); toast(t("run_cancelled")); return;
+      case "defer-task": var dt = findById(S.tasks, id); if (!dt) return; dt.due = addDays(today(), 1); UI.modal = null; save(); render(); toast(t("deferred")); track("defer_task"); return;
+      case "del-check":
+        var dd = today(), li = +el.getAttribute("data-i"), cl = (S.checks[dd] || []), gone = cl.splice(li, 1)[0];
+        if (gone) { syncSlotFromChecks(dd, slotOfTime(gone.t)); toast(t("deleted")); }
+        break;
+      case "review": openReview(+v || 7, el.getAttribute("data-end") || ""); return;
+      case "nudge": var txt = nudgeText(el.getAttribute("data-k"), id); if (!txt) return; shareText(txt, t("mr_copied")); track("nudge_" + el.getAttribute("data-k")); return;
+      case "paid-quote": var pq = findById(S.quotes, id); if (pq) { pq.stage = 3; stageDates(pq); toast(t("mr_paid_ok")); track("paid"); } break;
+      case "share-grocery":
+        var gl = groceryItems().filter(function (k) { return !S.grocery[k]; }).map(function (k) { return "• " + ingName(k); });
+        shareText(t("grocery_share_head") + "\n" + gl.join("\n"), t("grocery_copied")); track("grocery_share"); return;
+      case "gs-remind": UI.tab = "more"; UI.enter = true; render(); var rc = document.getElementById("remind-card"); if (rc) rc.scrollIntoView({ block: "start" }); return;
+      case "remind-ics": download("dahand-reminders.ics", remindersIcs(), "text/calendar;charset=utf-8"); S.reminders.set = true; save(); render(); toast(t("rm_ics_done")); track("remind_ics"); return;
+      case "remind-notify":
+        if (!("Notification" in window)) return;
+        var onPerm = function (p) { S.reminders.notify = p === "granted"; if (S.reminders.notify) S.reminders.set = true; save(); render(); scheduleReminders(); toast(t(p === "granted" ? "rm_notify_ok" : "rm_notify_no")); track("remind_notify_" + p); };
+        try { var pr = Notification.requestPermission(onPerm); if (pr && pr.then) pr.then(onPerm); } catch (er) { /* ignore */ }
+        return;
       case "edit": openModal({ kind: "edit", type: el.getAttribute("data-type"), id: id }); return;
       case "delete": deleteItem(UI.modal.type, UI.modal.id); return;
       case "undo": undoDelete(); return;
@@ -811,12 +1685,10 @@
         if (pool.length) S.mealPlan[i] = pool[Math.floor(Math.random() * pool.length)];
         break;
       case "grocery": var k = el.getAttribute("data-k"); S.grocery[k] = !S.grocery[k]; break;
-      case "advance": var qq = findById(S.quotes, id); if (qq && qq.stage < 3) qq.stage++; break;
-      case "dep-paid": var g = findById(S.gigs, id); if (g) g.depPaid = true; break;
-      case "full-paid": var g2 = findById(S.gigs, id); if (g2) { g2.fullPaid = true; g2.depPaid = true; } break;
-      case "export":
-        var blob = new Blob([JSON.stringify(S, null, 2)], { type: "application/json" });
-        var a2 = document.createElement("a"); a2.href = URL.createObjectURL(blob); a2.download = "dahand-data-" + today() + ".json"; document.body.appendChild(a2); a2.click(); a2.remove(); return;
+      case "advance": var qq = findById(S.quotes, id); if (qq && qq.stage < 3) { qq.stage++; stageDates(qq); } break;
+      case "dep-paid": var g = findById(S.gigs, id); if (g) { g.depPaid = true; toast(t("mr_paid_ok")); } break;
+      case "full-paid": var g2 = findById(S.gigs, id); if (g2) { g2.fullPaid = true; g2.depPaid = true; g2.paidAt = today(); toast(t("mr_paid_ok")); } break;
+      case "export": download("dahand-data-" + today() + ".json", JSON.stringify(S, null, 2), "application/json"); return;
       case "reset":
         if (window.confirm(t("m_reset_confirm"))) { try { localStorage.removeItem(KEY); } catch (er) { /* ignore */ } var lang = S.lang; S = fresh(); S.lang = lang; UI.ob = 0; UI.tab = "today"; UI.drafts = {}; render(); } return;
       default: return;
@@ -831,6 +1703,15 @@
       if (el.form.getAttribute("data-form") === "meal" && el.name === "pick") { var cm = el.form.querySelector(".custom-meal"); if (cm) cm.classList.toggle("hidden", el.value !== "custom"); }
     }
     if (!act) return;
+    if (act === "import-ics") {
+      var icf = el.files && el.files[0]; if (!icf) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        var n = importIcs(String(rd.result || ""));
+        el.value = ""; if (n) save(); render(); toast(n ? t("ics_ok", { n: n }) : t("ics_none")); track("ics_import");
+      };
+      rd.readAsText(icf); return;
+    }
     if (act === "import") {
       var file = el.files && el.files[0]; if (!file) return;
       var reader = new FileReader();
@@ -838,7 +1719,7 @@
         try {
           var obj = JSON.parse(reader.result);
           if (!obj || typeof obj !== "object" || !Array.isArray(obj.events) || !Array.isArray(obj.tasks)) throw new Error("bad");
-          S = migrate(Object.assign({}, obj, { onboarded: true })); save(); UI.tab = "today"; render(); toast(t("import_ok")); track("import");
+          S = migrate(Object.assign({}, obj, { onboarded: true, deviceId: S.deviceId })); markStreakSeen(); save(); UI.tab = "today"; render(); toast(t("import_ok")); track("import");
         } catch (er) { toast(t("import_bad")); }
       };
       reader.readAsText(file); return;
@@ -869,7 +1750,19 @@
     e.preventDefault();
     var fd = new FormData(f); var g = function (k) { return (fd.get(k) || "").toString().trim(); };
     if (kind === "edit") { saveEdit(fd); return; }
-    if (kind === "event") { S.events.push({ id: uid(), title: g("title"), date: g("date"), time: g("time"), mode: g("mode") || S.active }); track("event_add"); toast(t("saved")); }
+    if (kind === "restore") {
+      var code = g("code").replace(/\s+/g, "").toLowerCase();
+      if (!/^[a-z0-9]{8,64}$/.test(code)) { toast(t("sync_restore_none")); return; }
+      UI.sync = "saving"; paintSync();
+      pullSync(code).then(function (r) {
+        UI.sync = "ok"; paintSync();
+        if (!r || !r.found || !r.state) { toast(t("sync_restore_none")); return; }
+        if (!window.confirm(t("sync_restore_confirm"))) return;
+        S = migrate(JSON.parse(r.state)); S.deviceId = code; S.syncedVersion = S.updatedAt = r.updatedAt; save(true); scheduleReminders(); clearDrafts("restore"); UI.tab = "today"; UI.enter = true; render(); toast(t("sync_restore_ok")); track("sync_restore");
+      }).catch(function () { UI.sync = "error"; paintSync(); toast(t("sync_error")); });
+      return;
+    }
+    if (kind === "event") { S.events.push({ id: uid(), title: g("title"), date: g("date"), time: g("time"), end: g("end") > g("time") ? g("end") : "", mode: g("mode") || S.active }); track("event_add"); toast(t("saved")); }
     if (kind === "task" || kind === "qtask") { S.tasks.push({ id: uid(), title: g("title"), done: false, mode: g("mode") || S.active, due: kind === "qtask" ? today() : g("due") }); track("task_add"); toast(t("saved")); if (kind === "qtask") UI.focusKey = "qtask.title"; }
     if (kind === "meal") {
       var pick = g("pick"), d = today(), m = meal(pick);
@@ -879,8 +1772,32 @@
       track("meal_add");
     }
     if (kind === "sleep") { S.sleep[today()] = { bed: g("bed_h") + ":" + g("bed_m"), wake: g("wake_h") + ":" + g("wake_m") }; track("sleep_log"); toast(t("saved")); }
-    if (kind === "quote") { S.quotes.push({ id: uid(), client: g("client"), service: g("service"), amount: +g("amount") || 0, stage: 0 }); toast(t("saved")); }
+    if (kind === "quote") { S.quotes.push({ id: uid(), client: g("client"), service: g("service"), amount: +g("amount") || 0, stage: 0, createdAt: today() }); toast(t("saved")); }
     if (kind === "gig") { S.gigs.push({ id: uid(), venue: g("venue"), date: g("date"), fee: +g("fee") || 0, deposit: +g("deposit") || 0, depPaid: false, fullPaid: false }); toast(t("saved")); }
+    if (kind === "checkin") {
+      var cd = today(), c = { t: nowHM(), body: +g("body"), mood: +g("mood"), stress: +g("stress") };
+      if (!c.body || !c.mood || !c.stress) { toast(t("ci_need")); return; }
+      if (g("ate") !== "") c.ate = +g("ate");
+      if (g("water")) { c.water = +g("water"); S.water[cd] = Math.max(S.water[cd] || 0, c.water); }
+      if (g("ready")) c.ready = +g("ready");
+      if (g("note")) c.note = g("note");
+      var aft = UI.modal && UI.modal.after;
+      if (aft) {
+        c.after = aft.title; c.fuel = +g("fuel"); c.rest = +g("rest");
+        if (c.fuel === 2) c.ate = 1;
+        if (c.fuel >= 1) S.water[cd] = (S.water[cd] || 0) + 1;
+        S.restUntil = c.rest ? Date.now() + c.rest * 60000 : 0;
+      }
+      S.checks[cd] = S.checks[cd] || []; S.checks[cd].push(c);
+      syncSlotFromChecks(cd, slotOfTime(c.t));
+      clearDrafts("checkin"); track("checkin_save"); save();
+      UI.modal = { kind: "checkin-done", c: c }; UI.modalJustOpened = true; render(); toast(t("ci_saved_at", { t: c.t }));
+      return;
+    }
+    if (kind === "remind") {
+      S.reminders.morning = g("morning_h") + ":" + g("morning_m"); S.reminders.evening = g("evening_h") + ":" + g("evening_m");
+      scheduleReminders(); toast(t(S.reminders.set ? "rm_saved_again" : "saved")); track("remind_time");
+    }
     if (kind === "body") {
       S.profile = { sex: g("sex"), age: +g("age"), height: +g("height"), weight: +g("weight"), activity: +g("activity"), pregnant: fd.get("pregnant") === "on" };
       S.track = true; UI.showBody = false; toast(t("saved")); track("profile_set");
@@ -892,9 +1809,13 @@
 
   // ---------- start ----------
   initAnalytics();
-  if (S.onboarded && S.lastOpen !== today()) { track(S.lastOpen ? "return_visit" : "first_open"); S.lastOpen = today(); save(); }
+  if (S.onboarded && S.lastOpen !== today()) { track(S.lastOpen ? "return_visit" : "first_open"); S.lastOpen = today(); save(true); }
   if (!S.onboarded) track("onboarding_start");
   render();
+  startupPull();
+  scheduleReminders();
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { scheduleReminders(); if (S.onboarded && UI.lastDay !== today()) { UI.lastDay = today(); render(); } } });
+  UI.lastDay = today();
 
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
     window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () { /* offline cache optional */ }); });

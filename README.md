@@ -3,9 +3,11 @@
 DaHand là trợ lý cá nhân cho công việc và cuộc sống. Đây là bản web dùng thử để gửi link cho người dùng thật và thu góp ý.
 
 - **Có gì:** Hôm nay (tóm tắt, check-in năng lượng, lịch, việc, hỏi trợ lý), Kế hoạch (lịch 7 ngày + danh sách việc), Routine (giấc ngủ, năng lượng, nước, calo), 4 Mode (Văn phòng, Nội trợ & WFH, Freelancer, Nghệ sĩ), credit, khảo sát + đăng ký chờ, Anh/Việt.
-- **Dữ liệu:** lưu trong trình duyệt của từng người (localStorage), không có máy chủ, không tốn tiền.
+- **Dữ liệu:** lưu trong trình duyệt của từng người. Nếu điền `SHEET_ENDPOINT` (mục 3a), dữ liệu còn được gửi về Google Sheet của bạn, miễn phí.
 - **Trợ lý AI:** đang là bản giả lập chạy trên máy, trả lời từ chính dữ liệu của người dùng. Có sẵn chỗ để gắn AI thật sau (xem cuối file).
 - **Bản v2 (sau audit):** màn hình chào còn 2 bước, app bắt đầu trống kèm danh sách "Bắt đầu", thẻ Năng lượng mới (Sáng/Chiều/Tối, bảng 7 ngày, nhận xét giờ tỉnh táo nhất), sửa mọi mục + hoàn tác khi xóa, chọn món có sẵn khi ghi bữa ăn, lịch sử giấc ngủ 7 đêm, Hôm nay thay đổi theo Mode, tách việc từ tin nhắn chính xác hơn, tiền tệ USD/GBP/EUR/VND, đo hành vi ẩn danh (tùy chọn).
+- **Bản v3 (giữ chân người dùng):** thẻ "Buổi sáng" và "Check-in tối" 30 giây, chuỗi ngày + thưởng credit (3/7/14/30 ngày), tổng kết tuần (miễn phí) và tháng (10 credit), hỏi nhịp sống 3 câu lúc bắt đầu để có nhận xét ngay ngày đầu, nhắc nhở qua Lịch điện thoại (file .ics) hoặc thông báo trình duyệt, nhập lịch từ Google/Outlook/Apple (.ics), thẻ riêng theo Mode: chặn giờ tập trung (Văn phòng), gửi danh sách đi chợ (Nội trợ), chép tin nhắc thu tiền/cọc (Freelancer, Nghệ sĩ).
+- **Bản v4 (trợ lý thật):** thẻ "Trợ lý của bạn" dạng danh sách: chào, giờ hiện tại, lịch hôm nay theo giờ, còn bao lâu đến việc tiếp theo (tính cả thời gian di chuyển), khoảng trống và giờ nghỉ/ăn. Nút ▶ Bắt đầu / Xong để bấm giờ thật; DaHand so với dự kiến và tự học (trang "Timing" trong Google Sheet). Năng lượng tính theo logic: sức chứa (giấc ngủ, ăn, nước) so với lịch hôm nay cần, kết hợp check-in tâm trạng (có lưu, có lịch sử, xóa được). Xong mỗi việc sẽ hỏi năng lượng, tâm trạng, ăn uống và nghỉ ngơi.
 - **Cài lên điện thoại:** là PWA – mở link bằng điện thoại → menu trình duyệt → "Thêm vào màn hình chính".
 
 ---
@@ -78,6 +80,12 @@ Gửi link này cho người thử là xong.
 
 Câu 5 là thước đo quan trọng: nếu khoảng 40% trở lên trả lời "Rất thất vọng", sản phẩm đang đi đúng hướng.
 
+## 3a. Lưu dữ liệu về Google Sheet (giống app Sổ Lớp)
+
+Xem hướng dẫn từng bước trong `google-sheet/HUONG_DAN_GOOGLE_SHEET.txt`. Tóm tắt: tạo Google Sheet → Tiện ích mở rộng → Apps Script → dán `google-sheet/Code.gs` → Triển khai dạng Ứng dụng web (Tôi / Bất kỳ ai) → dán link `/exec` vào `SHEET_ENDPOINT` trong `js/config.js`.
+
+Sheet tự tạo 3 trang: **Users** (mỗi người một dòng), **Events** (nhật ký thao tác — thay được GoatCounter/Umami), **Data** (bản lưu đầy đủ để khôi phục bằng mã đồng bộ).
+
 ## 3b. Đo hành vi người thử (tùy chọn, miễn phí)
 
 App tự ghi các sự kiện ẩn danh (không có tên, email hay nội dung): `onboarding_start`, `onboarding_done`, `sample_<tên>`, `tab_<tên tab>`, `mode_<mode>`, `task_add`, `event_add`, `energy_set`, `sleep_log`, `meal_add`, `profile_set`, `ai_<loại>`, `inbox_scan`, `inbox_add`, `daily_bonus`, `first_open`, `return_visit`.
@@ -107,6 +115,6 @@ Không đặt khóa API AI trong các file này – repo public nên ai cũng đ
 
 ## Giới hạn của bản thử nghiệm
 
-- Dữ liệu chỉ nằm trên trình duyệt đang dùng; đổi máy hoặc xóa dữ liệu trình duyệt là mất. Người dùng có thể tải bản sao trong **Thêm → Tải dữ liệu của tôi**.
+- Chưa gắn Google Sheet thì dữ liệu chỉ nằm trên trình duyệt đang dùng; đổi máy hoặc xóa dữ liệu trình duyệt là mất. Đã gắn thì người dùng nhập mã đồng bộ (tab Thêm) để lấy lại. Người dùng có thể tải bản sao trong **Thêm → Tải dữ liệu của tôi**.
 - Credit chỉ để thử cảm giác trả theo lượt, chưa có thanh toán thật.
 - Calo là ước tính (công thức Mifflin–St Jeor × mức vận động), không phải tư vấn y tế. App tắt mục tiêu calo cho người dưới 18 tuổi và khi mang thai/cho con bú, và không bao giờ đặt mục tiêu dưới 1.200 kcal (nữ) / 1.500 kcal (nam).

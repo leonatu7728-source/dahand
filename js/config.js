@@ -19,6 +19,11 @@ window.DAHAND_CONFIG = {
   // Mục tiêu số ly nước mỗi ngày (chỉ để hiển thị tiến độ).
   WATER_GOAL: 8,
 
+  // ---- Lưu dữ liệu về Google Sheets (giống app Sổ Lớp) ----
+  // Dán link Web App (kết thúc bằng /exec) sau khi triển khai file google-sheet/Code.gs.
+  // Để trống "" thì dữ liệu chỉ lưu trên máy người dùng.
+  SHEET_ENDPOINT: "",
+
   // ---- Đo hành vi người thử (ẩn danh, không bắt buộc) ----
   // Cách 1 – GoatCounter (miễn phí cho dự án phi thương mại): tạo tài khoản ở goatcounter.com,
   //          điền mã trang, ví dụ "dahand" nếu địa chỉ của bạn là dahand.goatcounter.com.

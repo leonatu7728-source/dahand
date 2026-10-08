@@ -1,0 +1,67 @@
+DAHAND – LƯU DỮ LIỆU VỀ GOOGLE SHEET
+====================================
+
+Làm giống app Sổ Lớp: dán mã vào Google Sheet → Triển khai → lấy link /exec → dán vào app.
+Làm MỘT lần, khoảng 5 phút.
+
+
+1. TẠO GOOGLE SHEET
+-------------------
+  1. Mở https://sheets.google.com → bấm "Trống" (Blank) để tạo bảng tính mới.
+  2. Đặt tên, ví dụ: DaHand - Du lieu nguoi dung
+
+
+2. DÁN MÃ
+---------
+  1. Trong Sheet vừa tạo: menu "Tiện ích mở rộng" (Extensions) → "Apps Script".
+  2. Xóa hết chữ đang có trong ô soạn mã.
+  3. Mở file Code.gs (cùng thư mục với file hướng dẫn này) bằng Notepad → Ctrl+A → Ctrl+C.
+  4. Quay lại Apps Script → Ctrl+V → bấm biểu tượng Lưu (đĩa mềm).
+
+
+3. TRIỂN KHAI (DEPLOY)
+----------------------
+  1. Bấm nút xanh "Triển khai" (Deploy) → "Tùy chọn triển khai mới" (New deployment).
+  2. Bấm bánh răng cạnh "Chọn loại" → chọn "Ứng dụng web" (Web app).
+  3. Điền:
+       Thực thi với tư cách (Execute as):        Tôi (Me)
+       Người có quyền truy cập (Who has access): Bất kỳ ai (Anyone)
+  4. Bấm "Triển khai" → "Cấp quyền truy cập" → chọn tài khoản Google của bạn
+     → nếu hiện "Google chưa xác minh ứng dụng này": bấm "Nâng cao" → "Đi tới ... (không an toàn)" → "Cho phép".
+     (Đây là mã của chính bạn nên an toàn.)
+  5. Sao chép "URL ứng dụng web", dạng:  https://script.google.com/macros/s/..../exec
+
+
+4. DÁN LINK VÀO APP
+-------------------
+  Mở js\config.js bằng Notepad, tìm dòng:
+      SHEET_ENDPOINT: "",
+  Dán link vào giữa hai dấu ngoặc kép:
+      SHEET_ENDPOINT: "https://script.google.com/macros/s/..../exec",
+  Lưu lại. Nếu app đã ở trên GitHub: tải file js/config.js mới lên (ghi đè file cũ).
+
+
+5. KIỂM TRA
+-----------
+  - Mở app, làm màn hình chào, thêm 1 việc.
+  - Đợi khoảng 5 giây rồi mở Google Sheet: sẽ có 3 trang mới:
+      Users   – mỗi người dùng 1 dòng (tên, mode, số việc, năng lượng, giấc ngủ, lần dùng gần nhất…)
+      Events  – nhật ký thao tác (ai mở tab nào, thêm việc lúc nào…)
+      Data    – bản lưu đầy đủ để khôi phục khi đổi máy (KHÔNG sửa tay trang này)
+  - Trong app, tab Thêm → "Lưu trên máy chủ" hiện "Đã lưu lúc: …" là chạy đúng.
+
+
+6. CẬP NHẬT MÃ SAU NÀY
+----------------------
+  Sửa mã trong Apps Script → "Triển khai" → "Quản lý các bản triển khai" → bút chì
+  → Phiên bản: "Phiên bản mới" → "Triển khai". Link /exec GIỮ NGUYÊN, không phải sửa app.
+
+
+7. LƯU Ý
+--------
+  - Người dùng thấy một dòng thông báo rằng dữ liệu được lưu vào Google Sheet của nhóm DaHand.
+  - Dữ liệu ăn, ngủ, cân nặng là thông tin nhạy cảm: không chia sẻ Sheet công khai,
+    chỉ cấp quyền xem cho người cần.
+  - Mỗi người có một "mã đồng bộ" (tab Thêm). Nhập mã đó ở máy khác để dùng tiếp dữ liệu.
+  - Ai có link /exec và mã đồng bộ của một người thì đọc được dữ liệu của người đó.
+    Phù hợp cho giai đoạn thử nghiệm; khi ra mắt chính thức nên thêm đăng nhập.
