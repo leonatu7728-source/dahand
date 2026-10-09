@@ -61,7 +61,7 @@
       mealPlan: [], grocery: {}, quotes: [], gigs: [], sample: "",
       deviceId: newDeviceId(), updatedAt: 0, lastSync: 0,
       rhythm: null, reminders: { morning: "08:00", evening: "21:00", notify: false, set: false },
-      logs: [], run: null, restUntil: 0, focus: {}, checkins: {}, checks: {}, streakRewards: {}, unlocks: {}, lastWeekly: ""
+      logs: [], run: null, restUntil: 0, plusUntil: "", trialUsed: "", early: null, focus: {}, checkins: {}, checks: {}, streakRewards: {}, unlocks: {}, lastWeekly: ""
     };
   }
   // Upgrade older saved data to the current schema.
@@ -155,7 +155,9 @@
       tasksOpen: S.tasks.filter(function (x) { return !x.done; }).length, tasksDone: S.tasks.filter(function (x) { return x.done; }).length,
       events: S.events.length, energy7d: en.length, avgEnergy7d: avg(en), avgSleep7d: avg(sl), meals7d: meals,
       tracking: !!(S.track && S.profile), credits: S.credits, quotes: S.quotes.length, gigs: S.gigs.length,
-      streak: streakInfo().n, bestSlot: (bestSlot() || {}).slot || "", reminders: S.reminders && S.reminders.set };
+      streak: streakInfo().n, bestSlot: (bestSlot() || {}).slot || "", reminders: S.reminders && S.reminders.set,
+      trial: S.trialUsed || "", earlyPlan: S.early ? S.early.plan : "", priceFeel: S.early ? S.early.feel : "", wouldPay: S.early ? S.early.would : "",
+      earlyEmail: S.early ? S.early.email : "", currency: S.currency };
   }
   function scheduleSync() {
     if (!CFG.SHEET_ENDPOINT || !S.onboarded) return;
@@ -365,9 +367,12 @@
       var key = "month:" + today().slice(0, 7);
       S.unlocks = S.unlocks || {};
       if (!S.unlocks[key]) {
-        if (S.credits < MONTH_COST) { toast(t("ai_not_enough")); openModal({ kind: "credits" }); return; }
-        if (!window.confirm(t("rv_unlock_confirm", { n: MONTH_COST }))) return;
-        S.credits -= MONTH_COST; S.unlocks[key] = today(); save(); track("review_month_unlock");
+        if (isPlus()) { S.unlocks[key] = today(); save(); }
+        else {
+          if (S.credits < MONTH_COST) { toast(t("ai_not_enough")); openUpgrade("review"); return; }
+          if (!window.confirm(t("rv_unlock_confirm", { n: MONTH_COST }))) return;
+          S.credits -= MONTH_COST; S.unlocks[key] = today(); save(); track("review_month_unlock");
+        }
       }
     }
     if (end && end !== today()) { S.lastWeekly = end; save(); }
@@ -871,6 +876,58 @@
     render(); // keep "time left" and free gaps current
   }, 60000);
 
+  // ---------- Upgrade (price test: no real payment yet) ----------
+  // Prices live in js/data.js (DATA.pricing). Real billing will come from RevenueCat later.
+  function priceCur() { return DATA.pricing[S.currency] ? S.currency : "USD"; }
+  function priceFmt(n, cur) {
+    cur = cur || priceCur();
+    try { return new Intl.NumberFormat(locale(), { style: "currency", currency: cur, minimumFractionDigits: cur === "VND" ? 0 : 2, maximumFractionDigits: cur === "VND" ? 0 : 2 }).format(n); }
+    catch (e) { return n + " " + cur; }
+  }
+  function isPlus() { return !!(S.plusUntil && S.plusUntil >= today()); }
+  function planPrice(plan) {
+    var P = DATA.pricing[priceCur()];
+    if (plan === "plus_m") return P.plus_m;
+    if (plan === "plus_y") return P.plus_y;
+    var i = +String(plan).replace("pack", ""); return P.packs[i];
+  }
+  function planLabel(plan) {
+    if (plan === "plus_m") return t("up_plus") + " · " + t("up_monthly");
+    if (plan === "plus_y") return t("up_plus") + " · " + t("up_yearly");
+    var pk = DATA.pricing.packs[+String(plan).replace("pack", "")];
+    return t("up_pack_name", { n: pk.n + pk.bonus });
+  }
+  function openUpgrade(src) { track("upgrade_view_" + (src || "menu")); openModal({ kind: "upgrade" }); }
+  function upgradeHtml() {
+    var cur = priceCur(), P = DATA.pricing[cur], yearly = UI.billing !== "m";
+    var perMonth = cur === "VND" ? Math.round(P.plus_y / 12 / 1000) * 1000 : P.plus_y / 12, save = Math.round((1 - P.plus_y / (P.plus_m * 12)) * 100);
+    var status = isPlus() ? '<p class="done-line big">' + icon("check", 16) + esc(t("up_trial_on", { date: dayLabel(S.plusUntil) })) + "</p>" : "";
+    var plus = '<section class="plan plus"><div class="row between"><b class="plan-name">' + icon("spark", 16) + esc(t("up_plus")) + '</b><span class="pill ok">' + esc(t("up_popular")) + "</span></div>" +
+      '<div class="seg wide bill" role="tablist"><button type="button" role="tab" aria-selected="' + !yearly + '" class="' + (!yearly ? "on" : "") + '" data-act="billing" data-v="m">' + esc(t("up_monthly")) + '</button><button type="button" role="tab" aria-selected="' + yearly + '" class="' + (yearly ? "on" : "") + '" data-act="billing" data-v="y">' + esc(t("up_yearly")) + ' <small class="save">−' + save + "%</small></button></div>" +
+      '<p class="plan-price"><b>' + esc(priceFmt(yearly ? P.plus_y : P.plus_m, cur)) + "</b><span>" + esc(yearly ? t("up_per_year") : t("up_per_month")) + "</span></p>" +
+      (yearly ? '<p class="note">' + esc(t("up_yearly_note", { pm: priceFmt(perMonth, cur), save: save })) + "</p>" : "") +
+      ulist([t("up_f1", { n: DATA.pricing.plusCredits }), t("up_f2"), t("up_f3"), t("up_f4"), t("up_f5")], "check-list") +
+      (!S.trialUsed ? '<button type="button" class="btn full" data-act="trial-start">' + esc(t("up_trial_btn")) + "</button>" : "") +
+      '<button type="button" class="btn full' + (!S.trialUsed ? " ghost" : "") + '" data-act="choose-plan" data-v="' + (yearly ? "plus_y" : "plus_m") + '">' + esc(t("up_choose", { price: priceFmt(yearly ? P.plus_y : P.plus_m, cur) })) + "</button></section>";
+    var packs = '<h3 class="sub-h">' + esc(t("up_packs")) + '</h3><p class="note">' + esc(t("up_packs_note")) + '</p><ul class="pack-list">' + DATA.pricing.packs.map(function (pk, i) {
+      return '<li><div><b>' + esc(t("up_credits_n", { n: pk.n + pk.bonus })) + "</b>" + (pk.bonus ? '<span class="pill ok">' + esc(t("up_bonus", { n: pk.bonus })) + "</span>" : "") +
+        "<small>" + esc(t("up_uses", { n: Math.floor((pk.n + pk.bonus) / DATA.cost.standard) })) + '</small></div><button type="button" class="btn ghost" data-act="choose-plan" data-v="pack' + i + '">' + esc(priceFmt(P.packs[i], cur)) + "</button></li>";
+    }).join("") + "</ul>";
+    var free = '<h3 class="sub-h">' + esc(t("up_free")) + "</h3>" + ulist([t("up_free1"), t("up_free2", { n: DATA.pricing.freeCredits }), t("up_free3")]);
+    return status + plus + packs + free + '<p class="note">' + esc(t("up_test_note")) + "</p>";
+  }
+  // "Fake door": the person chose a plan. Nothing is charged; we ask what they think of the price and offer early access.
+  function earlyHtml(plan) {
+    var radios = function (name, opts) { return '<div class="opt-row" role="radiogroup">' + opts.map(function (o) { return '<label class="opt-radio"><input type="radio" name="' + name + '" value="' + o[0] + '" required><span>' + esc(o[1]) + "</span></label>"; }).join("") + "</div>"; };
+    return '<p class="note">' + esc(t("ea_intro")) + "</p>" + kv([[t("ea_plan"), planLabel(plan)], [t("ea_price"), priceFmt(planPrice(plan))]]) +
+      '<form class="form" data-form="early"><p class="q">' + esc(t("ea_feel")) + "</p>" + radios("feel", [["ok", t("ea_feel_ok")], ["high", t("ea_feel_high")], ["too", t("ea_feel_too")]]) +
+      '<p class="q">' + esc(t("ea_would")) + "</p>" + radios("would", [["yes", t("ea_would_yes")], ["maybe", t("ea_would_maybe")], ["no", t("ea_would_no")]]) +
+      '<label class="field"><span>' + esc(t("ea_email")) + '</span><input name="email" type="email" maxlength="120" autocomplete="email" placeholder="you@example.com"></label>' +
+      '<label class="check"><input type="checkbox" name="consent"> <span>' + esc(t("ea_consent")) + "</span></label>" +
+      '<button type="submit" class="btn full">' + esc(t("ea_submit")) + "</button></form>" +
+      (CFG.WAITLIST_FORM_URL ? '<p class="note"><a href="' + esc(CFG.WAITLIST_FORM_URL) + '" target="_blank" rel="noopener">' + esc(t("m_waitlist")) + " →</a></p>" : "");
+  }
+
   // ---------- icons ----------
   var ICON = {
     sun: '<path d="M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M5.6 18.4l-1.4 1.4M19.8 4.2l-1.4 1.4"/><circle cx="12" cy="12" r="4"/>',
@@ -945,7 +1002,7 @@
     var screen = { today: scrToday, plan: scrPlan, routine: scrRoutine, mode: scrMode, more: scrMore }[UI.tab]();
     return '<div class="layout no-chips">' +
       '<header class="top"><div class="brand"><span class="logo">' + icon("spark", 18) + '</span><span class="brand-name">DaHand</span></div>' +
-      '<div class="top-right"><button type="button" class="credit-badge" data-act="credits" aria-label="' + esc(t("credits_title") + ": " + S.credits) + '">' + icon("spark", 14) + "<b>" + S.credits + '</b><span class="credit-word">' + esc(t("credits")) + "</span>" + (claimed ? "" : '<span class="dot" aria-hidden="true"></span>') + "</button>" +
+      '<div class="top-right"><button type="button" class="credit-badge" data-act="credits" aria-label="' + esc(t("credits_title") + ": " + S.credits) + '">' + icon("spark", 14) + "<b>" + S.credits + '</b><span class="credit-word">' + esc(t("credits")) + "</span>" + (isPlus() ? '<span class="plus-tag">Plus</span>' : "") + (claimed ? "" : '<span class="dot" aria-hidden="true"></span>') + "</button>" +
       '<button type="button" class="lang-btn" data-act="lang" aria-label="' + esc(t("m_language")) + '">' + icon("globe", 16) + "<span>" + (S.lang === "vi" ? "EN" : "VI") + "</span></button></div></header>" +
       chips + (UI.tab === "today" ? "" : runBar()) + '<nav class="nav" aria-label="Main">' + nav + "</nav>" +
       '<main class="main' + (UI.enter ? " enter" : "") + '" id="main">' + screen + "</main></div>" +
@@ -1534,7 +1591,7 @@
     return feedback +
       '<h1 class="h1">' + esc(t("m_settings")) + "</h1>" +
       '<section class="card"><h2 class="card-h">' + icon("spark", 16) + esc(t("credits_title")) + " · " + S.credits + '</h2><p>' + esc(t("credits_what")) + "</p>" + ulist([t("credits_costs"), t("credits_earn"), t("credits_test")]) +
-      '<button type="button" class="btn' + (claimed ? " ghost" : "") + '" data-act="bonus"' + (claimed ? " disabled" : "") + ">" + esc(claimed ? t("daily_claimed") : t("daily_bonus", { n: CFG.DAILY_BONUS || 2 })) + "</button></section>" +
+      '<div class="row gap wrap"><button type="button" class="btn" data-act="upgrade" data-v="more">' + icon("spark", 16) + esc(isPlus() ? t("up_manage") : t("up_open")) + '</button><button type="button" class="btn ghost" data-act="bonus"' + (claimed ? " disabled" : "") + ">" + esc(claimed ? t("daily_claimed") : t("daily_bonus", { n: CFG.DAILY_BONUS || 2 })) + "</button></div></section>" +
       '<section class="card"><h2 class="card-h">' + esc(t("m_language")) + " & " + esc(t("m_currency")) + '</h2><div class="row gap wrap"><div class="seg"><button type="button" class="' + (S.lang === "en" ? "on" : "") + '" data-act="set-lang" data-v="en" aria-pressed="' + (S.lang === "en") + '">English</button><button type="button" class="' + (S.lang === "vi" ? "on" : "") + '" data-act="set-lang" data-v="vi" aria-pressed="' + (S.lang === "vi") + '">Tiếng Việt</button></div>' +
       '<label class="sel-wrap" aria-label="' + esc(t("m_currency")) + '"><select data-act="currency">' + currencies.map(function (c) { return '<option value="' + c + '"' + (S.currency === c ? " selected" : "") + ">" + c + "</option>"; }).join("") + "</select></label></div></section>" +
       '<section class="card"><h2 class="card-h">' + esc(t("m_modes")) + '</h2><p class="note">' + esc(t("m_modes_note")) + "</p>" + DATA.modeOrder.map(function (m) {
@@ -1565,8 +1622,11 @@
       var claimed = S.lastBonus === today();
       title = t("credits_title") + " · " + S.credits;
       inner = "<p>" + esc(t("credits_what")) + "</p>" + ulist([t("credits_costs"), t("credits_earn"), t("credits_test")]) +
-        '<button type="button" class="btn full' + (claimed ? " ghost" : "") + '" data-act="bonus"' + (claimed ? " disabled" : "") + ">" + esc(claimed ? t("daily_claimed") : t("daily_bonus", { n: CFG.DAILY_BONUS || 2 })) + "</button>";
+        '<button type="button" class="btn full" data-act="upgrade" data-v="badge">' + icon("spark", 16) + esc(isPlus() ? t("up_manage") : t("up_open")) + "</button>" +
+        '<button type="button" class="btn full ghost" data-act="bonus"' + (claimed ? " disabled" : "") + ">" + esc(claimed ? t("daily_claimed") : t("daily_bonus", { n: CFG.DAILY_BONUS || 2 })) + "</button>";
     }
+    if (M.kind === "upgrade") { title = t("up_title"); inner = upgradeHtml(); }
+    if (M.kind === "early") { title = t("ea_title"); inner = earlyHtml(M.plan); }
     if (M.kind === "focus") { title = t("fc_title"); inner = focusPicker(); }
     if (M.kind === "checkin") { title = t(M.after ? "ci_title_after" : "ci_title"); inner = checkinForm(M.after); }
     if (M.kind === "checkin-done") { title = t("ci_done_title"); inner = checkinResult(M.c); }
@@ -1672,7 +1732,7 @@
     track("ai_" + task);
     if (task === "inbox") { UI.tab = "mode"; UI.focusKey = "inbox"; render(); window.scrollTo(0, 0); return; }
     var cost = DATA.cost.standard;
-    if (S.credits < cost) { toast(t("ai_not_enough")); openModal({ kind: "credits" }); return; }
+    if (S.credits < cost) { toast(t("ai_not_enough")); openUpgrade("no_credits"); return; }
     var title = t("ai_" + task);
     var finish = function (html) {
       S.credits -= cost; save();
@@ -1772,6 +1832,13 @@
       case "focus-pick": var tmr = addDays(today(), 1); S.focus[tmr] = S.focus[tmr] === id ? "" : id; if (!S.focus[tmr]) delete S.focus[tmr]; else { S.checkins[today()] = 1; track("evening_focus"); } break;
       case "focus-block": addFocusBlock(); return;
       case "checkin": openModal({ kind: "checkin" }); track("checkin_open"); return;
+      case "upgrade": openUpgrade(v); return;
+      case "billing": UI.billing = v; render(); return;
+      case "choose-plan": track("upgrade_click_" + v); openModal({ kind: "early", plan: v }); return;
+      case "trial-start":
+        if (S.trialUsed) return;
+        S.trialUsed = today(); S.plusUntil = addDays(today(), 6); S.credits += DATA.pricing.plusCredits;
+        save(); track("trial_start"); UI.modal = null; render(); toast(t("up_trial_started", { n: DATA.pricing.plusCredits, date: dayLabel(S.plusUntil) })); return;
       case "review-week": openReview(7, el.getAttribute("data-end") || ""); return;
       case "focus-modal": openModal({ kind: "focus" }); return;
       case "toggle-past": UI.showPast = !UI.showPast; render(); return;
@@ -1908,6 +1975,13 @@
     if (kind === "sleep") { S.sleep[today()] = { bed: g("bed_h") + ":" + g("bed_m"), wake: g("wake_h") + ":" + g("wake_m") }; track("sleep_log"); toast(t("saved")); }
     if (kind === "quote") { S.quotes.push({ id: uid(), client: g("client"), service: g("service"), amount: +g("amount") || 0, stage: 0, createdAt: today() }); toast(t("saved")); }
     if (kind === "gig") { S.gigs.push({ id: uid(), venue: g("venue"), date: g("date"), fee: +g("fee") || 0, deposit: +g("deposit") || 0, depPaid: false, fullPaid: false }); toast(t("saved")); }
+    if (kind === "early") {
+      var plan = UI.modal && UI.modal.plan, email = g("email"), ok = fd.get("consent") === "on";
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast(t("ea_bad_email")); return; }
+      S.early = { plan: plan, price: planPrice(plan), cur: priceCur(), feel: g("feel"), would: g("would"), email: ok ? email : "", at: today() };
+      track("price_" + g("feel") + "_" + plan); track("would_pay_" + g("would") + "_" + plan);
+      clearDrafts("early"); UI.modal = null; save(); render(); toast(t("ea_thanks")); return;
+    }
     if (kind === "checkin") {
       var cd = today(), c = { t: nowHM(), body: +g("body"), mood: +g("mood"), stress: +g("stress") };
       if (!c.body || !c.mood || !c.stress) { toast(t("ci_need")); return; }

@@ -11,6 +11,17 @@ window.DAHAND_DATA = {
   // Credit price per AI action (see business doc).
   cost: { standard: 4, smart: 8 },
 
+  // Price test (no real payment yet). Edit freely. Store prices later come from RevenueCat.
+  // packs: credits sold + bonus credits; prices per currency are in the same order.
+  pricing: {
+    plusCredits: 300, freeCredits: 20,
+    packs: [{ n: 100, bonus: 0 }, { n: 300, bonus: 50 }, { n: 800, bonus: 200 }],
+    USD: { plus_m: 7.99, plus_y: 59.99, packs: [2.99, 8.99, 19.99] },
+    GBP: { plus_m: 6.99, plus_y: 54.99, packs: [2.49, 7.49, 16.99] },
+    EUR: { plus_m: 7.99, plus_y: 59.99, packs: [2.99, 8.99, 19.99] },
+    VND: { plus_m: 49000, plus_y: 399000, packs: [29000, 89000, 199000] }
+  },
+
   // Approximate calories per serving (estimates for demo purposes).
   meals: [
     { id: "oats",     kcal: 350, type: "breakfast", en: "Oatmeal with banana and peanut butter", vi: "Yến mạch chuối bơ đậu phộng", ing: ["oats", "banana", "peanut_butter", "milk"] },

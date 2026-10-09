@@ -1,5 +1,5 @@
 // Simple offline cache. Bump VERSION after each update so phones get the new files.
-var VERSION = "dahand-v10";
+var VERSION = "dahand-v11";
 var FILES = ["./", "index.html", "css/style.css", "js/config.js", "js/data.js", "js/samples.js", "js/i18n.js", "js/app.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", function (e) {

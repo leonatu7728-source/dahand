@@ -512,3 +512,22 @@ details.more[open] { padding-bottom: 10px; }
 .work-sec > .eyebrow { color: var(--c); }
 .sec-h { margin: 2px 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
 .ctx .eyebrow, .work-sec > .eyebrow { --c: inherit; }
+/* v7: upgrade / price test */
+.plan { padding: 16px; margin-bottom: 14px; border-radius: 22px; background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+.plan-name { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; }
+.plan .bill { margin: 12px 0 6px; }
+.plan .save { font-weight: 800; color: var(--ok); }
+.plan-price { margin: 8px 0 0; display: flex; align-items: baseline; gap: 4px; }
+.plan-price b { font-size: 34px; font-weight: 800; letter-spacing: -.03em; }
+.plan-price span { color: var(--ink-2); font-weight: 600; }
+.check-list { list-style: none; margin: 10px 0 6px; padding: 0; }
+.check-list li { position: relative; padding: 5px 0 5px 26px; line-height: 1.4; }
+.check-list li::before { content: "✓"; position: absolute; left: 4px; top: 5px; color: var(--ok); font-weight: 800; }
+.plan .btn.full { margin-top: 10px; }
+.pack-list { list-style: none; margin: 4px 0 8px; padding: 0; }
+.pack-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--glass-edge); }
+.pack-list li:first-child { border-top: 0; }
+.pack-list li > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pack-list small { width: 100%; color: var(--ink-2); font-size: 12.5px; }
+.pack-list .btn { min-height: 40px; flex: none; }
+.plus-tag { margin-left: 4px; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
