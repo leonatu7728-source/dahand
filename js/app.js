@@ -376,14 +376,16 @@
   }
 
   // ---------- money nudges (Freelancer / Artist) ----------
-  function moneyItems() {
+  function hasMode(m) { return S.modes.indexOf(m) > -1; }
+  function moneyItems(only) {
     var d = today(), out = [];
-    if (S.active === "freelancer") {
+    if (hasMode("freelancer") && (!only || only === "freelancer")) {
       S.quotes.forEach(function (q) {
         if (q.stage === 2) out.push({ kind: "inv", id: q.id, who: q.client, amount: q.amount, age: daysSince(q.invoicedAt), sort: q.invoicedAt || "0" });
         else if (q.stage === 0 && daysSince(q.createdAt) >= 5) out.push({ kind: "quote", id: q.id, who: q.client, amount: q.amount, age: daysSince(q.createdAt), sort: q.createdAt });
       });
-    } else if (S.active === "artist") {
+    }
+    if (hasMode("artist") && (!only || only === "artist")) {
       S.gigs.forEach(function (g) {
         if (!g.fullPaid && g.date < d && gigOwed(g) > 0) out.push({ kind: "bal", id: g.id, who: g.venue, amount: gigOwed(g), date: g.date, sort: g.date });
         else if (g.date >= d && g.deposit > 0 && !g.depPaid && g.date <= addDays(d, 30)) out.push({ kind: "dep", id: g.id, who: g.venue, amount: g.deposit, date: g.date, sort: g.date });
@@ -711,6 +713,7 @@
     min = Math.max(0, Math.round(min)); var h = Math.floor(min / 60), m = min % 60;
     return h ? (m ? t("dur_hm", { h: h, m: m }) : t("dur_h", { h: h })) : t("dur_m", { m: m });
   }
+  function fmtShort(min) { min = Math.round(min || 0); return min >= 60 ? Math.floor(min / 60) + "h" + (min % 60 ? pad(min % 60) : "") : min + "′"; }
   function catOf(kind, item) { return kind === "task" ? "task" : evKind(item.title)[0]; }
   function plannedOf(kind, item) {
     if (kind === "task") return +item.est || TASK_DEFAULT_MIN;
@@ -850,14 +853,14 @@
     var rows = keys.map(function (k) {
       var L = cats[k].slice(-20), p = mean(L.map(function (x) { return x.planned; })), a = mean(L.map(function (x) { return x.actual; })), lr = learnRatio(k);
       var pct = lr ? Math.round((lr.r - 1) * 100) : 0;
-      return [t("ek_" + k) + " (" + t("tc_times", { n: L.length }) + ")", t("tc_row", { p: fmtDur(p), a: fmtDur(a) }) + (lr ? " · " + (pct >= 0 ? "+" : "−") + Math.abs(pct) + "%" : ""), pct > 10 ? "bad-text" : pct < -10 ? "ok-text" : ""];
+      return [t("ek_" + k) + " · " + t("tc_times", { n: L.length }), t("tc_row", { p: fmtShort(p), a: fmtShort(a) }) + (lr ? " · " + (pct >= 0 ? "+" : "−") + Math.abs(pct) + "%" : ""), pct > 10 ? "bad-text" : pct < -10 ? "ok-text" : ""];
     });
     var recent = (S.logs || []).slice(-5).reverse().map(function (x) {
       var diff = x.actual - x.planned;
-      return x.date.slice(5) + " " + x.start + "–" + x.end + " · " + x.title + " · " + t("tc_recent", { p: fmtDur(x.planned), a: fmtDur(x.actual), d: (diff >= 0 ? "+" : "−") + fmtDur(Math.abs(diff)) });
+      return x.date.slice(5) + " " + x.start + "–" + x.end + " · " + x.title + " · " + t("tc_recent", { p: fmtShort(x.planned), a: fmtShort(x.actual), d: (diff >= 0 ? "+" : "−") + fmtShort(Math.abs(diff)) });
     });
     return '<section class="card"><h2 class="card-h">' + icon("clock", 16) + esc(t("tc_title")) + '</h2><p class="note">' + esc(t("tc_note")) + "</p>" +
-      (rows.length ? kv(rows) + '<h3 class="sub-h">' + esc(t("tc_recent_h")) + "</h3>" + ulist(recent) : '<p class="muted">' + esc(t("tc_empty")) + "</p>") + "</section>";
+      (rows.length ? kv(rows) + '<details class="more"><summary>' + esc(t("tc_recent_h")) + "</summary>" + ulist(recent) + "</details>" : '<p class="muted">' + esc(t("tc_empty")) + "</p>") + "</section>";
   }
   setInterval(function () {
     var el = document.getElementById("run-timer"); if (el) el.textContent = runElapsed();
@@ -898,6 +901,7 @@
     var active = document.activeElement;
     if (active && active.getAttribute && active.getAttribute("data-key")) UI.focusKey = active.getAttribute("data-key");
     document.documentElement.lang = S.lang;
+    if (S.onboarded) S.active = autoMode(); // context chosen by the system, never by a switch
     var accent = DATA.modes[S.active] ? DATA.modes[S.active].accent : "#2F5BEA";
     var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     // Only touch theme colours when they really change (re-setting them every render repaints the whole background = flicker).
@@ -932,20 +936,18 @@
 
   function shell() {
     var claimed = S.lastBonus === today();
-    var chips = S.modes.length > 1 ? '<div class="chips" role="group" aria-label="' + esc(t("m_modes")) + '">' + S.modes.map(function (m) {
-      return '<button type="button" class="chip' + (m === S.active ? " on" : "") + '" data-act="mode" data-v="' + m + '" aria-pressed="' + (m === S.active) + '" style="--c:' + DATA.modes[m].accent + '">' + icon(DATA.modes[m].icon, 16) + "<span>" + esc(t("mode_" + m)) + "</span></button>";
-    }).join("") + "</div>" : "";
-    var tabs = [["today", "sun", t("nav_today")], ["plan", "cal", t("nav_plan")], ["routine", "leaf", t("nav_routine")], ["mode", DATA.modes[S.active].icon, t("nav_mode")], ["more", "dots", t("nav_more")]];
+    var chips = "";
+    var tabs = [["today", "sun", t("nav_today")], ["plan", "cal", t("nav_plan")], ["routine", "leaf", t("nav_routine")], ["mode", "briefcase", t("nav_work")], ["more", "dots", t("nav_more")]];
     var nav = tabs.map(function (x) {
       var on = UI.tab === x[0];
       return '<button type="button" class="nav-btn' + (on ? " on" : "") + '" data-act="tab" data-v="' + x[0] + '"' + (on ? ' aria-current="page"' : "") + ">" + icon(x[1], 22) + "<span>" + esc(x[2]) + "</span></button>";
     }).join("");
     var screen = { today: scrToday, plan: scrPlan, routine: scrRoutine, mode: scrMode, more: scrMore }[UI.tab]();
-    return '<div class="layout' + (S.modes.length > 1 ? "" : " no-chips") + '">' +
+    return '<div class="layout no-chips">' +
       '<header class="top"><div class="brand"><span class="logo">' + icon("spark", 18) + '</span><span class="brand-name">DaHand</span></div>' +
       '<div class="top-right"><button type="button" class="credit-badge" data-act="credits" aria-label="' + esc(t("credits_title") + ": " + S.credits) + '">' + icon("spark", 14) + "<b>" + S.credits + '</b><span class="credit-word">' + esc(t("credits")) + "</span>" + (claimed ? "" : '<span class="dot" aria-hidden="true"></span>') + "</button>" +
       '<button type="button" class="lang-btn" data-act="lang" aria-label="' + esc(t("m_language")) + '">' + icon("globe", 16) + "<span>" + (S.lang === "vi" ? "EN" : "VI") + "</span></button></div></header>" +
-      chips + runBar() + '<nav class="nav" aria-label="Main">' + nav + "</nav>" +
+      chips + (UI.tab === "today" ? "" : runBar()) + '<nav class="nav" aria-label="Main">' + nav + "</nav>" +
       '<main class="main' + (UI.enter ? " enter" : "") + '" id="main">' + screen + "</main></div>" +
       '<div id="toast" class="toast" role="status" aria-live="polite"></div>';
   }
@@ -1062,28 +1064,116 @@
   }
 
   // ---------- Today ----------
+  // ---------- Today v5: one clear screen — Now, 3 numbers, timeline, tasks ----------
   function scrToday() {
-    var h = new Date().getHours(), d = today();
+    var h = new Date().getHours(), d = today(), s = streakInfo();
     var greet = t(h < 12 ? "greet_morning" : h < 18 ? "greet_afternoon" : "greet_evening", { name: S.name || t("friend") });
-    var evs = S.events.filter(function (e) { return e.date === d; }).sort(byTime);
-    var open = S.tasks.filter(function (x) { return !x.done; }).sort(byDue);
-    var dueToday = open.filter(function (x) { return x.due && x.due <= d; }).length;
-    var next = evs.filter(function (e) { return !e.time || e.time >= nowHM(); })[0];
-    var c = calorieInfo(), sl = sleepHours(d);
-    var lines = [];
-    lines.push(open.length ? t("brief_tasks", { n: open.length, d: dueToday }) : t("brief_no_tasks"));
-    var ml = modeBriefLine(); if (ml) lines.push(ml);
-    if (sl) lines.push(t("brief_sleep", { h: dec(sl) }));
-    if (c && !c.blocked && !S.hideNumbers) lines.push(t("brief_kcal", { n: num(c.left) }));
-    var bsl = bestSlot();
-    if (bsl) lines.push(t(bsl.real ? "brief_energy" : "brief_energy_guess", { slot: t("slot_" + bsl.slot + "_long") }));
-
-    return '<h1 class="h1">' + esc(greet) + '</h1><p class="sub">' + esc(dayLabel(d)) + "</p>" + streakRow() +
-      assistantCard(lines) + weeklyBanner() + phaseCard() + energyCard() + welcomeCard() + firstInsight() +
-      modeHighlight() +
-      '<div class="cols"><section class="card"><h2 class="card-h">' + esc(t("today_tasks")) + "</h2>" + (open.length ? '<ul class="list">' + open.slice(0, 6).map(taskRow).join("") + "</ul>" : '<p class="muted">' + esc(t("empty_tasks")) + "</p>") +
-      '<form class="form inline quick" data-form="qtask"><input name="title" required maxlength="100" placeholder="' + esc(t("quick_task_ph")) + '" aria-label="' + esc(t("add_task")) + '"><button type="submit" class="btn" aria-label="' + esc(t("add_task")) + '">' + icon("plus", 18) + "</button></form></section></div>" +
+    return '<div class="today-head"><div class="grow"><h1 class="h1">' + esc(greet) + '</h1><p class="sub">' + esc(dayLabel(d) + " · " + nowHM()) + "</p></div>" +
+      '<button type="button" class="streak-chip' + (s.today ? " on" : "") + '" data-act="review" data-v="7" aria-label="' + esc(t("streak_n", { n: s.n })) + '">' + icon("flame", 16) + "<b>" + s.n + "</b></button></div>" +
+      nudgeCard() + nowCard() + statStrip() + modeHighlight() + timelineCard() + tasksCard() +
       '<section class="card"><h2 class="card-h">' + esc(t("ask_title")) + '</h2><div class="asks">' + aiButtons() + '</div><p class="note">' + esc(t("ask_offline_note")) + "</p></section>";
+  }
+  // Small to-dos for the day (sleep log, check-in, pick tomorrow's first task, weekly review, reminders) as one row of chips.
+  function nudgeCard() {
+    var d = today(), h = new Date().getHours(), out = [], checks = (S.checks || {})[d] || [];
+    var hasSlot = function (k) { return checks.some(function (c) { return slotOfTime(c.t) === k; }); };
+    if (h >= 4 && h < 12) {
+      if (!S.sleep[d]) { var us = usualSleep(); out.push(us ? [t("ng_sleep", { bed: us.bed, wake: us.wake }), "sleep-usual", "check"] : [t("ng_sleep_other"), "sleep-other", "moon"]); }
+      if (!hasSlot("m")) out.push([t("ng_check_m"), "checkin", "bolt"]);
+    } else if (h >= 12 && h < 18) {
+      if (!hasSlot("a")) out.push([t("ng_check_a"), "checkin", "bolt"]);
+    } else {
+      if (!hasSlot("e")) out.push([t("ng_check_e"), "checkin", "bolt"]);
+      if (!(S.focus || {})[addDays(d, 1)] && S.tasks.some(function (x) { return !x.done; })) out.push([t("ng_focus"), "focus-modal", "check"]);
+    }
+    var wi = weekdayIndex(d), key = lastSunday();
+    if ((wi === 6 || wi === 0) && S.lastWeekly !== key && periodStats(key, 7).checkins >= 3) out.push([t("ng_review"), "review-week", "spark"]);
+    if (!S.sample && !(S.reminders && S.reminders.set)) out.push([t("ng_remind"), "gs-remind", "bell"]);
+    if (!out.length) return "";
+    return '<div class="nudges" role="group" aria-label="' + esc(t("ng_title")) + '">' + out.map(function (x) {
+      return '<button type="button" class="nudge" data-act="' + x[1] + '"' + (x[1] === "review-week" ? ' data-end="' + key + '"' : "") + ">" + icon(x[2], 14) + "<span>" + esc(x[0]) + "</span></button>";
+    }).join("") + "</div>";
+  }
+  function nowCard() {
+    var d = today(), nowM = nowMinutes(), tl = timeline(d), label, title, big, meta = "", btn = "";
+    var cur = tl.filter(function (x) { return x.status === "now"; })[0], next = tl.filter(function (x) { return x.status === "later"; })[0];
+    if (S.run) {
+      label = t("now_run"); title = S.run.title; big = '<span id="run-timer">' + esc(runElapsed()) + "</span>";
+      meta = t("run_plan", { n: fmtDur(S.run.pred) });
+      btn = '<button type="button" class="btn" data-act="run-stop">' + icon("check", 16) + esc(t("run_done")) + '</button><button type="button" class="btn ghost" data-act="run-cancel">' + esc(t("cancel")) + "</button>";
+    } else if (S.restUntil && S.restUntil > Date.now()) {
+      var r = new Date(S.restUntil);
+      label = t("now_rest"); title = t("now_rest_t"); big = esc(fmtDur((S.restUntil - Date.now()) / 60000));
+      meta = t("now_until", { time: pad(r.getHours()) + ":" + pad(r.getMinutes()) });
+    } else if (cur) {
+      label = t("now_now"); title = cur.e.title; big = esc(t("now_left", { t: fmtDur(cur.predEnd - nowM) }));
+      meta = fromMin(cur.start) + "–" + fromMin(cur.end);
+      btn = '<button type="button" class="btn" data-act="run-start" data-kind="event" data-id="' + esc(cur.e.id) + '">' + icon("play", 14) + esc(t("now_track")) + "</button>";
+    } else if (next) {
+      var target = next.travel ? next.leave : next.start;
+      label = t("now_next") + " · " + fromMin(next.start); title = next.e.title; big = esc(t("now_in", { t: fmtDur(target - nowM) }));
+      meta = next.travel ? t("now_leave", { time: fromMin(next.leave), n: next.travel }) : fromMin(next.start) + "–" + fromMin(next.end);
+      if (next.start - nowM <= 120) btn = '<button type="button" class="btn ghost" data-act="run-start" data-kind="event" data-id="' + esc(next.e.id) + '">' + icon("play", 14) + esc(t("run_start")) + "</button>";
+    } else {
+      var top = topThree()[0];
+      label = t(top ? "now_free" : "now_idle"); title = top ? top.title : t("now_nothing"); big = "";
+      meta = top ? t("now_suggest", { n: fmtDur(predictMin("task", top)) }) : t("now_nothing_sub");
+      if (top) btn = '<button type="button" class="btn" data-act="run-start" data-kind="task" data-id="' + esc(top.id) + '">' + icon("play", 14) + esc(t("run_start")) + "</button>";
+    }
+    return '<section class="card now-card" id="now-card"><p class="now-label">' + esc(label) + '</p><h2 class="now-title">' + esc(title) + "</h2>" +
+      (big ? '<p class="now-big">' + big + "</p>" : "") + (meta ? '<p class="now-meta">' + esc(meta) + "</p>" : "") +
+      (btn ? '<div class="row gap wrap now-actions">' + btn + "</div>" : "") + "</section>";
+  }
+  function statStrip() {
+    var d = today(), m = energyModel(), open = S.tasks.filter(function (x) { return !x.done; }), due = open.filter(function (x) { return x.due && x.due <= d; }).length;
+    var tl = timeline(d), gaps = freeGaps(d, tl), free = gaps.reduce(function (a, g) { return a + (g[2] === "free" ? g[1] - g[0] : 0); }, 0);
+    var tile = function (act, v, label, value, sub, cls) {
+      return '<button type="button" class="stat ' + (cls || "") + '" data-act="' + act + '"' + (v ? ' data-v="' + v + '"' : "") + "><span>" + esc(label) + "</span><b>" + esc(value) + "</b><small>" + esc(sub) + "</small></button>";
+    };
+    return '<div class="stat-strip">' +
+      tile("checkin", "", t("stat_energy"), m.nowPct + "%", m.last ? t("em_status_" + m.status) : t("stat_checkin"), "st-" + m.status) +
+      tile("tab", "plan", t("stat_tasks"), String(open.length), due ? t("stat_due", { n: due }) : t("stat_none_due")) +
+      tile("goto-timeline", "", t("stat_free"), (Math.floor(free / 60) + "h" + pad(free % 60)), t("stat_free_sub")) + "</div>";
+  }
+  function timelineCard() {
+    var d = today(), nowM = nowMinutes(), tl = timeline(d), gaps = freeGaps(d, tl), used = {};
+    var past = tl.filter(function (x) { return x.status === "done" || x.status === "past"; });
+    var rows = [];
+    tl.forEach(function (x) { if (UI.showPast || (x.status !== "done" && x.status !== "past")) rows.push({ at: x.start, ev: x }); });
+    gaps.forEach(function (g) { rows.push({ at: g[0], gap: g }); });
+    rows.sort(function (a, b) { return a.at - b.at || (a.ev ? -1 : 1); });
+    var html = rows.slice(0, 12).map(function (r) {
+      if (r.ev) {
+        var x = r.ev, sub = [];
+        if (x.travel && x.status === "later") sub.push(t("as_leave", { time: fromMin(x.leave), n: x.travel }));
+        if (Math.abs(x.predEnd - x.end) >= 5 && x.status !== "done") sub.push(t("as_pred", { time: fromMin(x.predEnd) }));
+        var act = x.status === "now" || (x.status === "later" && x.start - nowM <= 120) ? runButtons("event", x.e.id, true) : "";
+        return '<li class="tl-row ev ' + x.status + '"><span class="tl-time">' + esc(fromMin(x.start)) + "<small>" + esc(fromMin(x.end)) + '</small></span><span class="tl-dot"></span><div class="tl-body">' +
+          itemButton("event", x.e.id, '<span class="grow"><b>' + esc(x.e.title) + "</b>" + (x.status === "now" ? ' <span class="pill ok">' + esc(t("st_now")) + "</span>" : "") + (sub.length ? "<small>" + esc(sub.join(" · ")) + "</small>" : "") + "</span>") + "</div>" + act + "</li>";
+      }
+      var g = r.gap, kind = g[2];
+      var label = kind === "free" ? t("tl_free", { d: fmtDur(g[1] - g[0]) }) : gapIdea(g, used);
+      var sub2 = kind === "free" ? gapIdea(g, used) : fmtDur(g[1] - g[0]);
+      return '<li class="tl-row gap ' + kind + '"><span class="tl-time">' + esc(fromMin(g[0])) + '</span><span class="tl-dot"></span><div class="tl-body"><span>' + esc(label) + "</span><small>" + esc(sub2) + "</small></div></li>";
+    }).join("");
+    return '<section class="card" id="timeline"><div class="row between"><h2 class="card-h">' + icon("cal", 16) + esc(t("tl_title")) + '</h2><button type="button" class="link-btn" data-act="tab" data-v="plan">' + icon("plus", 14) + esc(t("tl_add")) + "</button></div>" +
+      (past.length ? '<button type="button" class="link-btn small-link" data-act="toggle-past">' + esc(UI.showPast ? t("tl_hide_past") : t("tl_past", { n: past.length })) + "</button>" : "") +
+      (html ? '<ol class="timeline">' + html + "</ol>" : '<p class="muted">' + esc(t("as_sched_none")) + "</p>") + "</section>";
+  }
+  function tasksCard() {
+    var d = today(), open = S.tasks.filter(function (x) { return !x.done; }).sort(byDue), focusId = (S.focus || {})[d];
+    var f = focusId && findById(open, focusId), list = (f ? [f].concat(open.filter(function (x) { return x !== f; })) : open).slice(0, 5);
+    return '<section class="card"><div class="row between"><h2 class="card-h">' + icon("check", 16) + esc(t("today_tasks")) + "</h2>" +
+      (open.length > 5 ? '<button type="button" class="link-btn" data-act="tab" data-v="plan">' + esc(t("tk_all", { n: open.length })) + " →</button>" : "") + "</div>" +
+      (list.length ? '<ul class="list">' + list.map(function (x) { return taskRow(x, { focus: x.id === focusId }); }).join("") + "</ul>" : '<p class="muted">' + esc(t("empty_tasks")) + "</p>") +
+      '<form class="form inline quick" data-form="qtask"><input name="title" required maxlength="100" placeholder="' + esc(t("quick_task_ph")) + '" aria-label="' + esc(t("add_task")) + '"><button type="submit" class="btn" aria-label="' + esc(t("add_task")) + '">' + icon("plus", 18) + "</button></form></section>";
+  }
+  function focusPicker() {
+    var tm = addDays(today(), 1), picked = (S.focus || {})[tm], open = S.tasks.filter(function (x) { return !x.done; }).sort(byDue).slice(0, 8);
+    return '<div class="pick-list">' + open.map(function (x) {
+      var on = picked === x.id;
+      return '<button type="button" class="pick' + (on ? " on" : "") + '" data-act="focus-pick" data-id="' + esc(x.id) + '" aria-pressed="' + on + '">' + (on ? icon("check", 14) : "") + "<span>" + esc(x.title) + "</span></button>";
+    }).join("") + '</div><button type="button" class="btn full" data-act="close-modal">' + esc(t("ci_done")) + "</button>";
   }
 
   function welcomeCard() {
@@ -1117,39 +1207,72 @@
   function gigOwed(g) { return g.fullPaid ? 0 : (+g.fee || 0) - (g.depPaid ? (+g.deposit || 0) : 0); }
   function artistOwed() { return S.gigs.reduce(function (a, g) { return a + gigOwed(g); }, 0); }
 
-  function modeHighlight() {
-    var d = today(), title, body, btn;
-    if (S.active === "office") {
+  // ---------- automatic context: the system decides which role matters right now ----------
+  function modeScores() {
+    var d = today(), h = new Date().getHours(), nowM = nowMinutes(), sc = {}, why = {};
+    S.modes.forEach(function (m) { sc[m] = 0; why[m] = ""; });
+    var ww = {};
+    var add = function (m, n, w) { if (sc[m] == null) return; sc[m] += n; if (!why[m] || n > ww[m]) { why[m] = w; ww[m] = n; } }; // keep the strongest reason
+    var tl = timeline(d), cur = tl.filter(function (x) { return x.status === "now"; })[0], next = tl.filter(function (x) { return x.status === "later"; })[0];
+    if (cur && cur.e.mode) add(cur.e.mode, 4, t("why_now", { title: cur.e.title }));
+    if (next && next.e.mode && next.start - nowM <= 180) add(next.e.mode, 3, t("why_next", { title: next.e.title, time: fromMin(next.start) }));
+    if (hasMode("artist")) {
+      var gt = S.gigs.filter(function (g) { return g.date === d; })[0];
+      if (gt) add("artist", 4, t("why_gig_today", { venue: gt.venue }));
+      moneyItems("artist").forEach(function (m) {
+        if (m.kind === "dep" && -daysSince(m.date) <= 7) add("artist", 2, t("why_deposit", { venue: m.who }));
+        if (m.kind === "bal") add("artist", 1, t("why_balance", { venue: m.who }));
+      });
+    }
+    if (hasMode("freelancer")) moneyItems("freelancer").forEach(function (m) {
+      if (m.kind === "inv") add("freelancer", m.age >= 14 ? 3 : 2, t("why_invoice", { who: m.who, n: m.age || 0 }));
+      else add("freelancer", 1, t("why_quote", { who: m.who }));
+    });
+    if (hasMode("home")) {
+      if (h >= 16 && h < 20) add("home", 2, t("why_dinner"));
+      if (weekdayIndex(d) >= 5 && groceryItems().some(function (k) { return !S.grocery[k]; })) add("home", 1, t("why_grocery"));
+      if (S.events.some(function (e) { return e.date === d && evKind(e.title)[0] === "care"; })) add("home", 1, t("why_kids"));
+    }
+    if (weekdayIndex(d) < 5 && h >= 8 && h < 18) add("office", 2, t("why_workhours"));
+    return S.modes.map(function (m) { return { m: m, s: sc[m], why: why[m] }; })
+      .sort(function (a, b) { return b.s - a.s || (a.m === "office" ? 1 : b.m === "office" ? -1 : 0); });
+  }
+  function autoMode() { var r = modeScores(); return r.length ? r[0].m : "office"; }
+  function contextBody(m) {
+    var d = today();
+    if (m === "office") {
       var bs = bestSlot(), fb = focusBlock();
-      var nm = S.events.filter(function (e) { return e.date === d && e.mode === "office" && !e.focus && (!e.time || e.time >= nowHM()); }).sort(byTime)[0];
-      title = t("hl_focus");
-      body = fb ? "<p>" + esc(t("hl_focus_set", { when: (fb.date === d ? t("today_label") : dayLabel(fb.date)) + " " + fb.time + (fb.end ? "–" + fb.end : ""), title: fb.title })) + "</p>"
-        : bs ? "<p>" + esc(t("hl_focus_tip", { range: PEAK[bs.slot].join("–"), slot: t("slot_" + bs.slot + "_long") })) + '</p><button type="button" class="btn" data-act="focus-block">' + esc(t("hl_focus_btn")) + "</button>"
+      return fb ? "<p>" + esc(t("hl_focus_set", { when: (fb.date === d ? t("today_label") : dayLabel(fb.date)) + " " + fb.time + (fb.end ? "–" + fb.end : ""), title: fb.title })) + "</p>"
+        : bs ? "<p>" + esc(t("hl_focus_tip", { range: PEAK[bs.slot].join("–"), slot: t("slot_" + bs.slot + "_long") })) + '</p><button type="button" class="btn ghost" data-act="focus-block">' + esc(t("hl_focus_btn")) + "</button>"
         : "<p>" + esc(t("hl_focus_need")) + "</p>";
-      body += '<p class="note">' + esc(t("hl_office")) + ": " + esc(nm ? (nm.time ? nm.time + " " : "") + nm.title : t("hl_office_none")) + "</p>";
-      btn = t("hl_office_btn");
-    } else if (S.active === "home") {
+    }
+    if (m === "home") {
       if (!S.mealPlan.length) S.mealPlan = newWeek();
       var left = groceryItems().filter(function (k) { return !S.grocery[k]; }).length;
-      title = t("hl_home");
-      body = "<p><b>" + esc(mealName(meal(S.mealPlan[weekdayIndex(d)]))) + '</b> <span class="muted">· ' + esc(t("h_grocery")) + ": " + esc(t("h_left", { n: left })) + "</span></p>" +
+      return "<p>" + esc(t("hl_home")) + ": <b>" + esc(mealName(meal(S.mealPlan[weekdayIndex(d)]))) + '</b> <span class="muted">· ' + esc(t("h_grocery")) + ": " + esc(t("h_left", { n: left })) + "</span></p>" +
         (left ? '<button type="button" class="btn ghost" data-act="share-grocery">' + esc(t("hl_share_grocery")) + "</button>" : "");
-      btn = t("hl_home_btn");
-    } else {
-      var items = moneyItems();
-      title = t(S.active === "freelancer" ? "hl_money" : "hl_money_artist");
-      body = items.length ? '<ul class="list">' + items.slice(0, 3).map(moneyRow).join("") + "</ul>" + (items.length > 3 ? '<p class="note">' + esc(t("hl_money_more", { n: items.length - 3 })) + "</p>" : "")
-        : "<p>" + esc(t(S.active === "freelancer" ? "hl_money_none" : "hl_money_none_artist")) + "</p>";
-      btn = t(S.active === "freelancer" ? "hl_free_btn" : "hl_artist_btn");
     }
-    return '<section class="card highlight" style="--c:' + DATA.modes[S.active].accent + '"><h2 class="card-h">' + icon(DATA.modes[S.active].icon, 16) + esc(title) + "</h2>" + body + '<button type="button" class="link-btn" data-act="tab" data-v="mode">' + esc(btn) + " →</button></section>";
+    var items = moneyItems(m);
+    var gig = m === "artist" ? nextGig() : null;
+    return (gig ? "<p>" + esc(t("ctx_next_gig", { venue: gig.venue, date: dayLabel(gig.date), fee: money(gig.fee) })) + "</p>" : "") +
+      (items.length ? '<ul class="list">' + items.slice(0, 2).map(moneyRow).join("") + "</ul>" + (items.length > 2 ? '<p class="note">' + esc(t("hl_money_more", { n: items.length - 2 })) + "</p>" : "")
+        : "<p>" + esc(t(m === "freelancer" ? "hl_money_none" : "hl_money_none_artist")) + "</p>");
+  }
+  // Today: only the 1–2 roles that matter now, chosen automatically.
+  function modeHighlight() {
+    var r = modeScores(), show = r.filter(function (x, i) { return i === 0 || x.s >= 2; }).slice(0, 2);
+    return '<section class="card ctx-card"><div class="row between"><h2 class="card-h">' + icon("spark", 16) + esc(t("ctx_title")) + '</h2><button type="button" class="link-btn" data-act="tab" data-v="mode">' + esc(t("ctx_all")) + " →</button></div>" +
+      show.map(function (x) {
+        var M = DATA.modes[x.m];
+        return '<div class="ctx" style="--c:' + M.accent + '"><p class="eyebrow">' + icon(M.icon, 14) + esc(t("mode_" + x.m)) + (x.why ? '<span class="ctx-why">' + esc(x.why) + "</span>" : "") + "</p>" + contextBody(x.m) + "</div>";
+      }).join("") + "</section>";
   }
 
   function aiButtons() {
     var list = [["plan", DATA.cost.standard], ["meal", DATA.cost.standard]];
-    if (S.active === "office") list.push(["inbox", 0]);
-    if (S.active === "home") list.push(["groceries", DATA.cost.standard]);
-    if (S.active === "freelancer" || S.active === "artist") list.push(["money", DATA.cost.standard]);
+    list.push(["inbox", 0]);
+    if (hasMode("home")) list.push(["groceries", DATA.cost.standard]);
+    if (hasMode("freelancer") || hasMode("artist")) list.push(["money", DATA.cost.standard]);
     return list.map(function (x) {
       return '<button type="button" class="ask" data-act="ai" data-v="' + x[0] + '"><span>' + esc(t("ai_" + x[0])) + '</span><span class="cost">' + esc(x[1] ? t("ai_cost", { n: x[1] }) : t("ai_free")) + "</span></button>";
     }).join("");
@@ -1262,7 +1385,7 @@
 
   // ---------- Routine ----------
   function scrRoutine() {
-    return '<h1 class="h1">' + esc(t("nav_routine")) + "</h1>" + reviewCard() + energyFull() + timeCard() + sleepCard() + waterCard() + foodCard();
+    return '<h1 class="h1">' + esc(t("nav_routine")) + "</h1>" + firstInsight() + reviewCard() + energyFull() + timeCard() + sleepCard() + waterCard() + foodCard();
   }
   function energyFull() {
     var d = today(), m = energyModel();
@@ -1279,28 +1402,29 @@
         (c.note ? '<span class="muted small">' + esc(c.note) + "</span>" : "") + '</div><button type="button" class="mini" data-act="del-check" data-i="' + i + '" aria-label="' + esc(t("delete")) + '">' + esc(t("delete")) + "</button></li>";
     }).join("") + "</ul>" : '<p class="muted">' + esc(t("em_no_check")) + "</p>";
     return '<section class="card"><h2 class="card-h">' + icon("bolt", 16) + esc(t("em_title")) + "</h2>" + batteryHtml(m) +
+      kv([[t("em_cap"), String(m.capT)], [t("em_dem"), String(m.demT)], [t("em_bal"), signed(m.bal) + " · " + t("em_status_" + m.status), m.status === "over" ? "bad-text" : m.status === "ok" ? "ok-text" : ""], [t("em_left_plan"), m.left + "%"]]) +
+      '<details class="more"><summary>' + esc(t("em_how")) + "</summary>" +
       '<h3 class="sub-h">' + esc(t("em_cap_h")) + "</h3>" + kv(m.cap.map(function (x) { return [x[0], x === m.cap[0] ? String(x[1]) : signed(x[1]), x[1] < 0 ? "bad-text" : ""]; }).concat([[t("em_total"), String(m.capT)]])) +
       '<h3 class="sub-h">' + esc(t("em_dem_h")) + "</h3>" + kv(m.dem.map(function (x) { return [x[0], "−" + x[1]]; }).concat([[t("em_total"), String(m.demT)]])) +
-      kv([[t("em_bal"), signed(m.bal) + " · " + t("em_status_" + m.status), m.status === "over" ? "bad-text" : m.status === "ok" ? "ok-text" : ""], [t("em_left_plan"), m.left + "%"]]) +
+      '<p class="note">' + esc(t("em_formula")) + "</p></details>" +
       '<h3 class="sub-h">' + esc(t("em_log_h")) + "</h3>" + log +
       '<button type="button" class="btn full" data-act="checkin">' + esc(t("ci_open")) + "</button>" +
       '<h3 class="sub-h">' + esc(t("tips_title")) + "</h3>" + tipsHtml(energyTips(m)) +
-      '<h3 class="sub-h">' + esc(t("energy_week")) + "</h3>" + grid + ulist(energyInsightLines()) +
-      '<p class="note">' + esc(t("em_formula")) + "</p></section>";
+      '<h3 class="sub-h">' + esc(t("energy_week")) + "</h3>" + grid + ulist(energyInsightLines()) + "</section>";
   }
   function sleepCard() {
     var d = today(), s = S.sleep[d] || {}, sl = sleepHours(d);
     var days = []; for (var i = 6; i >= 0; i--) days.push(addDays(d, -i));
     var vals = days.map(sleepHours), logged = vals.filter(function (x) { return x; });
     var avg = logged.length ? Math.round(logged.reduce(function (a, b) { return a + b; }, 0) / logged.length * 10) / 10 : 0;
-    var bars = logged.length ? '<div class="sleep-bars" aria-label="' + esc(t("r_sleep_week", { h: avg })) + '">' + days.map(function (x, i) {
+    var bars = logged.length ? '<div class="sleep-bars" aria-label="' + esc(t("r_sleep_week", { h: dec(avg) })) + '">' + days.map(function (x, i) {
       var h = vals[i];
       return '<div class="sb"><span class="sb-val">' + (h ? h : "") + '</span><div class="sb-track"><span class="goal"></span><span class="sb-bar' + (h && h < 7 ? " low" : "") + '" style="height:' + (h ? Math.min(100, h / 10 * 100) : 0) + '%"></span></div><span class="sb-day">' + esc(dayShort(x)) + "</span></div>";
     }).join("") + "</div>" : "";
     return '<section class="card" id="sleep-card"><h2 class="card-h">' + esc(t("r_sleep")) + " · " + esc(t("r_last_night")) + "</h2>" +
       '<form class="form inline" data-form="sleep">' + timeSelect("bed", s.bed, t("r_bed")) + timeSelect("wake", s.wake, t("r_wake")) + '<button type="submit" class="btn">' + esc(t("save")) + "</button></form>" +
-      (sl ? '<p class="big-num">' + esc(t("r_sleep_hours", { h: sl })) + "</p>" + (sl < 7 ? '<p class="warn">' + esc(t("r_sleep_low")) + "</p>" : "") : "") +
-      '<h3 class="sub-h">' + esc(logged.length ? t("r_sleep_week", { h: avg }) : t("r_sleep_none")) + "</h3>" + bars +
+      (sl ? '<p class="big-num">' + esc(t("r_sleep_hours", { h: dec(sl) })) + "</p>" + (sl < 7 ? '<p class="warn">' + esc(t("r_sleep_low")) + "</p>" : "") : "") +
+      '<h3 class="sub-h">' + esc(logged.length ? t("r_sleep_week", { h: dec(avg) }) : t("r_sleep_none")) + "</h3>" + bars +
       '<p class="note">' + esc(t("r_sleep_goal")) + "</p></section>";
   }
   function waterCard() {
@@ -1335,9 +1459,15 @@
   }
 
   // ---------- Mode screens ----------
+  // One "Work" page for the whole person: every role they have, most relevant first (no manual switching).
   function scrMode() {
-    var head = '<p class="eyebrow" style="--c:' + DATA.modes[S.active].accent + '">' + icon(DATA.modes[S.active].icon, 14) + esc(t("mode_" + S.active)) + "</p>";
-    return head + { office: modeOffice, home: modeHome, freelancer: modeFreelancer, artist: modeArtist }[S.active]();
+    var fn = { office: modeOffice, home: modeHome, freelancer: modeFreelancer, artist: modeArtist };
+    var order = modeScores().map(function (x) { return x.m; }).filter(function (m) { return m !== "office"; }).concat(["office"]);
+    return '<h1 class="h1">' + esc(t("nav_work")) + '</h1><p class="sub">' + esc(t("work_sub")) + "</p>" + order.map(function (m) {
+      var M = DATA.modes[m];
+      return '<section class="work-sec" id="sec-' + m + '" style="--c:' + M.accent + '"><p class="eyebrow">' + icon(M.icon, 14) + esc(t("mode_" + m)) + "</p>" +
+        fn[m]().replace(/<h1 class="h1">/g, '<h2 class="sec-h">').replace(/<\/h1>/g, "</h2>") + "</section>";
+    }).join("");
   }
   function modeOffice() {
     var f = UI.found;
@@ -1407,7 +1537,7 @@
       '<button type="button" class="btn' + (claimed ? " ghost" : "") + '" data-act="bonus"' + (claimed ? " disabled" : "") + ">" + esc(claimed ? t("daily_claimed") : t("daily_bonus", { n: CFG.DAILY_BONUS || 2 })) + "</button></section>" +
       '<section class="card"><h2 class="card-h">' + esc(t("m_language")) + " & " + esc(t("m_currency")) + '</h2><div class="row gap wrap"><div class="seg"><button type="button" class="' + (S.lang === "en" ? "on" : "") + '" data-act="set-lang" data-v="en" aria-pressed="' + (S.lang === "en") + '">English</button><button type="button" class="' + (S.lang === "vi" ? "on" : "") + '" data-act="set-lang" data-v="vi" aria-pressed="' + (S.lang === "vi") + '">Tiếng Việt</button></div>' +
       '<label class="sel-wrap" aria-label="' + esc(t("m_currency")) + '"><select data-act="currency">' + currencies.map(function (c) { return '<option value="' + c + '"' + (S.currency === c ? " selected" : "") + ">" + c + "</option>"; }).join("") + "</select></label></div></section>" +
-      '<section class="card"><h2 class="card-h">' + esc(t("m_modes")) + "</h2>" + DATA.modeOrder.map(function (m) {
+      '<section class="card"><h2 class="card-h">' + esc(t("m_modes")) + '</h2><p class="note">' + esc(t("m_modes_note")) + "</p>" + DATA.modeOrder.map(function (m) {
         var on = S.modes.indexOf(m) > -1;
         return '<label class="check mode-toggle" style="--c:' + DATA.modes[m].accent + '"><input type="checkbox" data-act="toggle-mode" data-v="' + m + '"' + (on ? " checked" : "") + (m === "office" ? " disabled" : "") + "> <span><b>" + esc(t("mode_" + m)) + '</b><br><span class="muted small">' + esc(t("mode_" + m + "_desc")) + "</span></span></label>";
       }).join("") + "</section>" +
@@ -1437,6 +1567,7 @@
       inner = "<p>" + esc(t("credits_what")) + "</p>" + ulist([t("credits_costs"), t("credits_earn"), t("credits_test")]) +
         '<button type="button" class="btn full' + (claimed ? " ghost" : "") + '" data-act="bonus"' + (claimed ? " disabled" : "") + ">" + esc(claimed ? t("daily_claimed") : t("daily_bonus", { n: CFG.DAILY_BONUS || 2 })) + "</button>";
     }
+    if (M.kind === "focus") { title = t("fc_title"); inner = focusPicker(); }
     if (M.kind === "checkin") { title = t(M.after ? "ci_title_after" : "ci_title"); inner = checkinForm(M.after); }
     if (M.kind === "checkin-done") { title = t("ci_done_title"); inner = checkinResult(M.c); }
     if (M.kind === "review") { title = t(M.days > 7 ? "rv_month_title" : "rv_week_title"); inner = reviewHtml(M.days, M.end); }
@@ -1626,7 +1757,6 @@
       case "gs-task": UI.focusKey = "qtask.title"; render(); var q = app.querySelector('[data-key="qtask.title"]'); if (q) { q.scrollIntoView({ block: "center" }); q.focus(); } return;
       case "gs-energy": var ec = document.getElementById("energy-card"); if (ec) ec.scrollIntoView({ block: "center", behavior: "smooth" }); return;
       case "gs-food": UI.tab = "routine"; UI.showBody = true; S.track = true; save(); render(); var fc = document.getElementById("food-card"); if (fc) fc.scrollIntoView({ block: "start" }); return;
-      case "mode": S.active = v; UI.enter = true; track("mode_" + v); break;
       case "tab": UI.tab = v; UI.modal = null; UI.enter = true; window.scrollTo(0, 0); track("tab_" + v); render(); return;
       case "plan-tab": UI.planTab = v; render(); return;
       case "credits": openModal({ kind: "credits" }); return;
@@ -1642,6 +1772,10 @@
       case "focus-pick": var tmr = addDays(today(), 1); S.focus[tmr] = S.focus[tmr] === id ? "" : id; if (!S.focus[tmr]) delete S.focus[tmr]; else { S.checkins[today()] = 1; track("evening_focus"); } break;
       case "focus-block": addFocusBlock(); return;
       case "checkin": openModal({ kind: "checkin" }); track("checkin_open"); return;
+      case "review-week": openReview(7, el.getAttribute("data-end") || ""); return;
+      case "focus-modal": openModal({ kind: "focus" }); return;
+      case "toggle-past": UI.showPast = !UI.showPast; render(); return;
+      case "goto-timeline": var tlc = document.getElementById("timeline"); if (tlc) tlc.scrollIntoView({ block: "start", behavior: "smooth" }); return;
       case "run-start": startRun(el.getAttribute("data-kind"), id); return;
       case "run-stop": stopRun(); return;
       case "run-cancel": S.run = null; save(); render(); toast(t("run_cancelled")); return;
